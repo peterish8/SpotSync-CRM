@@ -8,27 +8,45 @@ import { Check, Loader2, Music, Filter, Plus, Eye, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
-// ====== SPOTIFY-MATCHED CANONICAL ARTIST LISTS ======
+// ====== SPOTIFY-MATCHED CANONICAL ARTIST LISTS (110+ TAMIL ARTISTS) ======
 
 // TAMIL ARTISTS - Exact Spotify display names
 const TAMIL_ARTISTS = [
-  // Music Directors / Composers (strongest signal)
-  "a.r. rahman", "anirudh ravichander", "yuvan shankar raja",
-  "harris jayaraj", "santhosh narayanan", "g. v. prakash",
-  "ilaiyaraaja", "d. imman", "vidyasagar", "deva", "ghibran",
-  "sam c.s.", "sean roldan", "vishal chandrashekhar", "justin prabhakaran",
+  // Music Directors / Composers
+  "a.r. rahman", "anirudh ravichander", "d. imman", "deva", "g. v. prakash",
+  "ghibran", "harris jayaraj", "ilaiyaraaja", "justin prabhakaran", "leon james",
+  "sam c.s.", "santhosh narayanan", "sean roldan", "vijay antony", "vishal chandrashekhar",
+  "vivek - mervin", "yuvan shankar raja", "govind vasantha", "dhibu ninan thomas",
+  "ravi basrur", "sushin shyam", "vishnu vijay",
   
-  // Male Playback Singers
-  "sid sriram", "karthik", "hariharan", "s. p. balasubrahmanyam",
-  "vijay yesudas", "pradeep kumar", "haricharan", "shankar mahadevan",
+  // Male Playback / Indie / Rap
+  "abishek suresh", "adithya rk", "anand aravindakshan", "ananthu", "anthony daasan",
+  "arivu", "arjun chandy", "arunraja kamaraj", "asal kolaar", "deepak blue",
+  "dhanush", "gana bala", "gana balachandar", "gana guna", "gana kadhar",
+  "hariharan", "haricharan", "hiphop tamizha", "hiphop tamizha aadhi", "karthik",
+  "nakul abhyankar", "naresh iyer", "nivas", "pradeep kumar", "rokesh",
+  "silambarasan tr", "sivakarthikeyan", "sooraj santhosh", "srinivas", "tippu",
+  "unni menon", "velmurugan", "yogi sekar", "sid sriram", "s. p. balasubrahmanyam",
+  "vijay yesudas", "shankar mahadevan",
   
-  // Female Playback Singers
-  "chinmayi", "swetha mohan", "k. s. chithra", "dhee",
-  "andrea jeremiah", "jonita gandhi", "sadhana sargam",
+  // Female Playback / Indie
+  "aditi shankar", "anuradha sriram", "aparna narayanan", "chinmayi", "dhee",
+  "jonita gandhi", "maanasi g kannan", "padmalatha", "prarthana sriram", "prashanthini",
+  "rakshita suresh", "saindhavi", "sanah moidutty", "sashaa thirupati", "shakthisree gopalan",
+  "shreya ghoshal", "shruti haasan", "shweta mohan", "sithara krishnakumar",
+  "srinidhi venkatesh", "sunitha sarathy", "tanvi shah", "vaikom vijayalakshmi",
+  "vani jairam", "swetha mohan", "k. s. chithra", "andrea jeremiah", "sadhana sargam",
   
-  // Indie / Folk / Modern Tamil
-  "ofro", "asal kolaar", "hip hop tamizha", "arivu",
-  "paal dabba", "srinisha jayaseelan",
+  // Lyricists / Writers
+  "kabilan", "ko. sesha", "madhan karky", "madan karky", "na. muthukumar",
+  "pa. vijay", "snehan", "thamarai", "vaali", "vairamuthu", "vivek", "viveka",
+  "yugabharathi", "vishnu edavan",
+  
+  // Actor-Singers
+  "kamal haasan", "thalapathy vijay", "vijay", "vikram", "santhanam",
+  
+  // Additional Indie / Folk
+  "ofro", "paal dabba", "srinisha jayaseelan", "hip hop tamizha",
 ];
 
 // K-POP ARTISTS - Exact Spotify display names (checked FIRST - highest priority)
