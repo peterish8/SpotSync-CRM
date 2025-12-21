@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Layers, Settings, Filter, Users } from "lucide-react";
+import { LayoutDashboard, Layers, Settings, Filter, Users, LogOut } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -54,7 +54,18 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-4">
+        <button
+          onClick={() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "/";
+          }}
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-text-secondary hover:text-accent-red hover:bg-background-hover transition-all duration-200"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="font-medium">Logout</span>
+        </button>
         <p className="text-xs text-text-tertiary text-center">
           Powered by Spotify API
         </p>

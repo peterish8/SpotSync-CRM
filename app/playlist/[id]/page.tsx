@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { SpotifyApi, Scopes } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { Music, ArrowLeft, Clock, Heart, Calendar, ChevronDown } from "lucide-react";
+import { Music, ArrowLeft, Clock, Heart, Calendar, ChevronDown, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { isSessionTimeoutError, handleSessionTimeout } from "@/lib/spotify/auth";
@@ -321,7 +321,7 @@ export default function PlaylistDetailPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Back Button */}
-        <Link href="/">
+        <Link href="/dashboard">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Library
@@ -352,12 +352,20 @@ export default function PlaylistDetailPage() {
             {playlist.description && (
               <p className="text-sm text-text-secondary mb-3 line-clamp-2">{playlist.description}</p>
             )}
-            <div className="flex items-center gap-2 text-sm text-text-secondary">
-              <span className="font-medium text-text-primary">{playlist.owner.display_name}</span>
-              <span>•</span>
-              <span>{playlist.tracks.length}/{playlist.total} songs</span>
-              <span>•</span>
-              <span>{formatTotalDuration(playlist.tracks)}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
+                <span className="font-medium text-text-primary">{playlist.owner.display_name}</span>
+                <span>•</span>
+                <span>{playlist.tracks.length}/{playlist.total} songs</span>
+                <span>•</span>
+                <span>{formatTotalDuration(playlist.tracks)}</span>
+              </div>
+              <Link href={`/edit/${playlistId}`}>
+                <Button variant="secondary" size="sm" className="gap-2">
+                  <Pencil className="w-4 h-4" />
+                  Edit Order
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
