@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { SpotifyApi, Scopes, SimplifiedPlaylist } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from "@/components/ui";
-import { Music, ListMusic, Clock, Play } from "lucide-react";
+import { Card, CardContent, Button } from "@/components/ui";
+import { Music, ListMusic, Play, Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface DashboardStats {
   totalPlaylists: number;
   totalTracks: number;
-  recentPlaylists: SimplifiedPlaylist[];
+  likedSongsCount: number;
+  allPlaylists: SimplifiedPlaylist[];
 }
 
 export default function Dashboard() {
@@ -29,23 +30,25 @@ export default function Dashboard() {
           [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
         );
 
-        // Check if authenticated
         const { authenticated } = await sdk.authenticate();
         if (!authenticated) {
           router.push("/login");
           return;
         }
 
-        // Fetch playlists
+        // Fetch all playlists
         const playlists = await sdk.currentUser.playlists.playlists(50);
+        
+        // Fetch liked songs count
+        const likedSongs = await sdk.currentUser.tracks.savedTracks(1);
 
-        // Calculate total tracks
         const totalTracks = playlists.items.reduce((acc, pl) => acc + (pl.tracks?.total || 0), 0);
 
         setStats({
           totalPlaylists: playlists.total,
           totalTracks,
-          recentPlaylists: playlists.items.slice(0, 6),
+          likedSongsCount: likedSongs.total,
+          allPlaylists: playlists.items,
         });
       } catch (err: any) {
         console.error("Dashboard error:", err);
@@ -144,42 +147,59 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Recent Playlists */}
+        {/* All Playlists Grid */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-text-primary">Your Playlists</h2>
-            <Link href="/workspace">
-              <Button variant="ghost" size="sm">View All</Button>
-            </Link>
-          </div>
+          <h2 className="text-xl font-bold text-text-primary mb-4">Your Library</h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {stats?.recentPlaylists.map((playlist) => (
-              <Card key={playlist.id} variant="interactive" className="group overflow-hidden">
-                <div className="aspect-square relative">
-                  {playlist.images?.[0] ? (
-                    <img
-                      src={playlist.images[0].url}
-                      alt={playlist.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-background-tertiary flex items-center justify-center">
-                      <Music className="w-12 h-12 text-text-tertiary" />
-                    </div>
-                  )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {/* Liked Songs Card */}
+            <Link href="/playlist/liked-songs">
+              <Card variant="interactive" className="group overflow-hidden">
+                <div className="aspect-square relative bg-gradient-to-br from-purple-700 to-blue-300 flex items-center justify-center">
+                  <Heart className="w-16 h-16 text-white fill-white" />
                   {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="w-12 h-12 bg-spotify-green rounded-full flex items-center justify-center transform translate-y-2 group-hover:translate-y-0 transition-transform">
                       <Play className="w-5 h-5 text-black ml-0.5" />
                     </div>
                   </div>
                 </div>
                 <div className="p-3">
-                  <p className="font-medium text-text-primary truncate text-sm">{playlist.name}</p>
-                  <p className="text-xs text-text-secondary">{playlist.tracks?.total || 0} tracks</p>
+                  <p className="font-medium text-text-primary truncate text-sm">Liked Songs</p>
+                  <p className="text-xs text-text-secondary">{stats?.likedSongsCount || 0} tracks</p>
                 </div>
               </Card>
+            </Link>
+
+            {/* All Playlists */}
+            {stats?.allPlaylists.map((playlist) => (
+              <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
+                <Card variant="interactive" className="group overflow-hidden">
+                  <div className="aspect-square relative">
+                    {playlist.images?.[0] ? (
+                      <img
+                        src={playlist.images[0].url}
+                        alt={playlist.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-background-tertiary flex items-center justify-center">
+                        <Music className="w-12 h-12 text-text-tertiary" />
+                      </div>
+                    )}
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-12 h-12 bg-spotify-green rounded-full flex items-center justify-center transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <Play className="w-5 h-5 text-black ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <p className="font-medium text-text-primary truncate text-sm">{playlist.name}</p>
+                    <p className="text-xs text-text-secondary">{playlist.tracks?.total || 0} tracks</p>
+                  </div>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
