@@ -37,7 +37,7 @@ export function PlaylistContainer({ playlist, side, onLoadMore, onPrefetch }: Pl
       ref={setNodeRef}
       className={`
         flex-1 bg-background-tertiary rounded-xl p-6
-        transition-all duration-200 min-h-[500px] flex flex-col
+        transition-all duration-200 h-[calc(100vh-280px)] flex flex-col overflow-hidden
         ${isOver ? "ring-2 ring-spotify-green bg-spotify-green/5" : ""}
       `}
     >
