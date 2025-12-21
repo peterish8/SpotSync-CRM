@@ -359,8 +359,8 @@ export default function WorkspacePage() {
           {/* Dual Playlist View */}
           {playlistA && playlistB ? (
             <div className="grid grid-cols-2 gap-6">
-              <PlaylistContainer playlist={playlistA} side="A" />
-              <PlaylistContainer playlist={playlistB} side="B" />
+              <PlaylistContainer playlist={playlistA} side="A" onLoadMore={() => loadMoreTracks("A")} />
+              <PlaylistContainer playlist={playlistB} side="B" onLoadMore={() => loadMoreTracks("B")} />
             </div>
           ) : (
             <div className="text-center py-20 bg-background-secondary rounded-xl border border-border">
