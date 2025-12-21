@@ -45,8 +45,13 @@ const TAMIL_ARTISTS = [
   // Actor-Singers
   "kamal haasan", "thalapathy vijay", "vijay", "vikram", "santhanam",
   
-  // Additional Indie / Folk
+  // Additional Indie / Folk / Artists
   "ofro", "paal dabba", "srinisha jayaseelan", "hip hop tamizha",
+  
+  // Additional Tamil Artists (user-reported)
+  "sai abhyankkar", "pradeep ranganathan", "sai smriti", "s. janaki",
+  "malaysia vasudevan", "joshua aaron", "adesh krishna", "sabari darshan",
+  "deepak chander", "siddhu kumar", "lakshmikanth m", "gkb", "rathinamey",
 ];
 
 // K-POP ARTISTS - Exact Spotify display names (checked FIRST - highest priority)
@@ -94,6 +99,7 @@ const HINDI_ARTISTS = [
   
   // Lyricists
   "amitabh bhattacharya", "irshad kamil", "kumaar", "kunaal vermaa", "manoj muntashir",
+  "manan bhardwaj",
 ];
 
 // ENGLISH ARTISTS - Canonical Spotify list (220+ artists)
