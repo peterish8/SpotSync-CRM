@@ -78,8 +78,8 @@ const KPOP_ARTISTS = [
   "crush", "loco", "gray", "ash island", "epik high",
   "swervy", "ejae", "hwang sang jun",
   
-  // K-POP RELATED PROJECTS
-  "kpop demon hunters cast",
+  // K-POP RELATED PROJECTS / COLLABS
+  "kpop demon hunters cast", "huntr/x", "huntr",
 ];
 
 // HINDI ARTISTS - Exact Spotify display names (40+ artists)
@@ -131,7 +131,7 @@ const ENGLISH_ARTISTS = [
   // EDM / ELECTRONIC
   "calvin harris", "avicii", "alan walker", "martin garrix", "zedd",
   "kygo", "marshmello", "david guetta", "tiësto", "deadmau5",
-  "daft punk", "clean bandit", "steve aoki", "slander", "m83",
+  "daft punk", "clean bandit", "slander", "m83", "steve aoki",
   
   // R&B / SOUL / ALT-POP
   "frank ocean", "sam smith", "halsey", "lana del rey", "charlie puth",
@@ -227,12 +227,12 @@ interface SimplifiedPlaylist {
   total: number;
 }
 
-// DETECTION ORDER: K-pop > Tamil > Telugu > Hindi > English
-function detectLanguage(trackName: string, artistNames: string[]): string {
+// MULTI-GENRE DETECTION: Returns ALL matching genres for collab tracks
+function detectLanguages(trackName: string, artistNames: string[]): string[] {
   const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
+  const detectedLanguages: string[] = [];
 
-  // Helper: Check if artist name EXACTLY matches or STARTS with canonical name
-  // Helper: Check if artist name EXACTLY matches or STARTS with canonical name
+  // Helper: Check if artist name EXACTLY matches canonical name
   const matchesArtist = (artistList: string[]) => 
     lowerArtists.some((artist) => 
       artistList.some((canonical) => 
@@ -240,32 +240,26 @@ function detectLanguage(trackName: string, artistNames: string[]): string {
       )
     );
 
-  // PRIORITY 1: Check ARTIST LISTS FIRST (before Unicode detection)
-  // This ensures known English artists don't get misclassified by Korean track titles
-  
-  // 1a. ENGLISH (check first - highest priority for known Western artists)
-  if (matchesArtist(ENGLISH_ARTISTS)) return "english";
+  // Check ALL artist lists - add ALL matches (for collabs)
+  if (matchesArtist(ENGLISH_ARTISTS)) detectedLanguages.push("english");
+  if (matchesArtist(KPOP_ARTISTS)) detectedLanguages.push("korean");
+  if (matchesArtist(TAMIL_ARTISTS)) detectedLanguages.push("tamil");
+  if (matchesArtist(TELUGU_ARTISTS)) detectedLanguages.push("telugu");
+  if (matchesArtist(HINDI_ARTISTS)) detectedLanguages.push("hindi");
 
-  // 1b. K-POP ARTIST MATCH
-  if (matchesArtist(KPOP_ARTISTS)) return "korean";
+  // If at least one match found, return all matches
+  if (detectedLanguages.length > 0) {
+    return detectedLanguages;
+  }
 
-  // 1c. TAMIL ARTIST MATCH
-  if (matchesArtist(TAMIL_ARTISTS)) return "tamil";
-
-  // 1d. TELUGU ARTIST MATCH
-  if (matchesArtist(TELUGU_ARTISTS)) return "telugu";
-
-  // 1e. HINDI ARTIST MATCH
-  if (matchesArtist(HINDI_ARTISTS)) return "hindi";
-
-  // PRIORITY 2: Unicode regex fallback (for unknown artists)
-  if (KOREAN_REGEX.test(trackName)) return "korean";
-  if (TAMIL_REGEX.test(trackName)) return "tamil";
-  if (TELUGU_REGEX.test(trackName)) return "telugu";
-  if (HINDI_REGEX.test(trackName)) return "hindi";
+  // Unicode regex fallback (for unknown artists)
+  if (KOREAN_REGEX.test(trackName)) return ["korean"];
+  if (TAMIL_REGEX.test(trackName)) return ["tamil"];
+  if (TELUGU_REGEX.test(trackName)) return ["telugu"];
+  if (HINDI_REGEX.test(trackName)) return ["hindi"];
 
   // DEFAULT: English
-  return "english";
+  return ["english"];
 }
 
 
@@ -368,7 +362,7 @@ export default function GenreExtractPage() {
           if (!item.track) return;
 
           const artistNames = item.track.artists.map((a: any) => a.name);
-          const language = detectLanguage(item.track.name, artistNames);
+          const languages = detectLanguages(item.track.name, artistNames);
 
           const trackInfo: TrackInfo = {
             uri: item.track.uri,
@@ -377,13 +371,16 @@ export default function GenreExtractPage() {
             albumImage: item.track.album?.images?.[item.track.album.images.length - 1]?.url || "",
           };
 
-          if (!genreMap.has(language)) {
-            genreMap.set(language, []);
-          }
-          // Avoid duplicates
-          if (!genreMap.get(language)!.some((t) => t.uri === trackInfo.uri)) {
-            genreMap.get(language)!.push(trackInfo);
-          }
+          // Add track to ALL detected languages (for collabs)
+          languages.forEach((language) => {
+            if (!genreMap.has(language)) {
+              genreMap.set(language, []);
+            }
+            // Avoid duplicates within same genre
+            if (!genreMap.get(language)!.some((t) => t.uri === trackInfo.uri)) {
+              genreMap.get(language)!.push(trackInfo);
+            }
+          });
         });
 
         offset += limit;
