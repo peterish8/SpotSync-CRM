@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { SpotifyApi, Scopes } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
-import { Button, Card, CardContent } from "@/components/ui";
-import { Check, Loader2, Music, Filter, Plus, Heart } from "lucide-react";
+import { Button, Card, CardContent, Modal } from "@/components/ui";
+import { Check, Loader2, Music, Filter, Plus, Eye, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -18,7 +18,6 @@ const TAMIL_ARTISTS = [
   "d imman", "c. sathya", "sam c.s.", "c sathya", "ghibran",
 ];
 
-// K-pop patterns
 const KPOP_PATTERNS = [
   "bts", "blackpink", "exo", "twice", "iu", "newjeans",
   "stray kids", "seventeen", "red velvet", "itzy", "enhypen",
@@ -26,7 +25,6 @@ const KPOP_PATTERNS = [
   "(g)i-dle", "monsta x", "got7", "mamamoo", "bigbang",
 ];
 
-// Hindi artists
 const HINDI_ARTISTS = [
   "arijit singh", "shreya ghoshal", "neha kakkar", "badshah",
   "a.r. rahman", "pritam", "amit trivedi", "vishal-shekhar",
@@ -34,16 +32,22 @@ const HINDI_ARTISTS = [
   "jubin nautiyal", "armaan malik", "darshan raval",
 ];
 
-// Language detection regex
 const TAMIL_REGEX = /[\u0B80-\u0BFF]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 const HINDI_REGEX = /[\u0900-\u097F]/;
+
+interface TrackInfo {
+  uri: string;
+  name: string;
+  artists: string;
+  albumImage: string;
+}
 
 interface Genre {
   id: string;
   name: string;
   count: number;
-  trackUris: string[];
+  tracks: TrackInfo[];
   color: string;
 }
 
@@ -54,54 +58,24 @@ interface SimplifiedPlaylist {
   total: number;
 }
 
-interface TrackItem {
-  track: {
-    id: string;
-    name: string;
-    uri: string;
-    artists: { id: string; name: string }[];
-  } | null;
-}
-
 function detectLanguage(trackName: string, artistNames: string[]): string {
   const lowerArtists = artistNames.map((a) => a.toLowerCase());
-  const lowerTrack = trackName.toLowerCase();
 
-  // Check Tamil
-  if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) {
-    return "tamil";
-  }
+  if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) return "tamil";
   if (TAMIL_REGEX.test(trackName)) return "tamil";
 
-  // Check Hindi
-  if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) {
-    return "hindi";
-  }
+  if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) return "hindi";
   if (HINDI_REGEX.test(trackName)) return "hindi";
 
-  // Check K-pop
-  if (lowerArtists.some((name) => KPOP_PATTERNS.some((kp) => name.includes(kp)))) {
-    return "korean";
-  }
+  if (lowerArtists.some((name) => KPOP_PATTERNS.some((kp) => name.includes(kp)))) return "korean";
   if (KOREAN_REGEX.test(trackName)) return "korean";
 
-  // Default to English
   return "english";
 }
 
 function getGenreColor(genre: string): string {
   const colors: Record<string, string> = {
-    tamil: "#F97316",
-    english: "#3B82F6",
-    korean: "#8B5CF6",
-    hindi: "#EC4899",
-    pop: "#EC4899",
-    rock: "#EF4444",
-    "hip-hop": "#F59E0B",
-    edm: "#10B981",
-    indie: "#6366F1",
-    jazz: "#FBBF24",
-    classical: "#A78BFA",
+    tamil: "#F97316", english: "#3B82F6", korean: "#8B5CF6", hindi: "#EC4899",
   };
   return colors[genre.toLowerCase()] || "#6B7280";
 }
@@ -115,9 +89,15 @@ export default function GenreExtractPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Preview modal state
+  const [previewGenre, setPreviewGenre] = useState<Genre | null>(null);
+  
+  // Target playlist options
+  const [targetMode, setTargetMode] = useState<"new" | "existing">("new");
   const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [targetPlaylistId, setTargetPlaylistId] = useState("");
 
-  // Load playlists on mount
   useEffect(() => {
     async function loadPlaylists() {
       try {
@@ -137,12 +117,7 @@ export default function GenreExtractPage() {
         const likedSongs = await sdk.currentUser.tracks.savedTracks(1);
 
         setPlaylists([
-          {
-            id: "liked-songs",
-            name: "Liked Songs",
-            images: [],
-            total: likedSongs.total,
-          },
+          { id: "liked-songs", name: "Liked Songs", images: [], total: likedSongs.total },
           ...response.items.map((p) => ({
             id: p.id,
             name: p.name,
@@ -157,11 +132,9 @@ export default function GenreExtractPage() {
         setIsLoading(false);
       }
     }
-
     loadPlaylists();
   }, [router]);
 
-  // Analyze playlist when selected
   async function handlePlaylistSelect(playlistId: string) {
     if (!playlistId) return;
 
@@ -177,14 +150,13 @@ export default function GenreExtractPage() {
         [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
       );
 
-      const genreMap = new Map<string, Set<string>>();
+      const genreMap = new Map<string, TrackInfo[]>();
       let offset = 0;
       const limit = 50;
       let hasMore = true;
 
-      // Fetch all tracks with pagination
       while (hasMore) {
-        let items: TrackItem[];
+        let items: any[];
 
         if (playlistId === "liked-songs") {
           const response = await sdk.currentUser.tracks.savedTracks(limit, offset);
@@ -196,34 +168,40 @@ export default function GenreExtractPage() {
           hasMore = response.next !== null;
         }
 
-        // Analyze each track
         items.forEach((item) => {
           if (!item.track) return;
 
-          const artistNames = item.track.artists.map((a) => a.name);
+          const artistNames = item.track.artists.map((a: any) => a.name);
           const language = detectLanguage(item.track.name, artistNames);
 
+          const trackInfo: TrackInfo = {
+            uri: item.track.uri,
+            name: item.track.name,
+            artists: artistNames.join(", "),
+            albumImage: item.track.album?.images?.[item.track.album.images.length - 1]?.url || "",
+          };
+
           if (!genreMap.has(language)) {
-            genreMap.set(language, new Set());
+            genreMap.set(language, []);
           }
-          genreMap.get(language)!.add(item.track.uri);
+          // Avoid duplicates
+          if (!genreMap.get(language)!.some((t) => t.uri === trackInfo.uri)) {
+            genreMap.get(language)!.push(trackInfo);
+          }
         });
 
         offset += limit;
       }
 
-      // Convert to array
-      const genreList: Genre[] = Array.from(genreMap.entries()).map(([name, trackUris]) => ({
+      const genreList: Genre[] = Array.from(genreMap.entries()).map(([name, tracks]) => ({
         id: name,
         name: name.charAt(0).toUpperCase() + name.slice(1),
-        count: trackUris.size,
-        trackUris: Array.from(trackUris),
+        count: tracks.length,
+        tracks,
         color: getGenreColor(name),
       }));
 
-      // Sort by count
       genreList.sort((a, b) => b.count - a.count);
-
       setGenres(genreList);
       toast.success(`Found ${genreList.length} languages/genres`);
     } catch (error) {
@@ -243,18 +221,13 @@ export default function GenreExtractPage() {
     }
     setSelectedGenres(newSelected);
 
-    // Auto-generate playlist name
-    const selectedNames = genres
-      .filter((g) => newSelected.has(g.id))
-      .map((g) => g.name);
+    const selectedNames = genres.filter((g) => newSelected.has(g.id)).map((g) => g.name);
     setNewPlaylistName(selectedNames.length > 0 ? `${selectedNames.join(" + ")} Mix` : "");
   }
 
   function getTotalSelectedSongs(): number {
     const allUris = new Set<string>();
-    genres
-      .filter((g) => selectedGenres.has(g.id))
-      .forEach((g) => g.trackUris.forEach((uri) => allUris.add(uri)));
+    genres.filter((g) => selectedGenres.has(g.id)).forEach((g) => g.tracks.forEach((t) => allUris.add(t.uri)));
     return allUris.size;
   }
 
@@ -264,8 +237,13 @@ export default function GenreExtractPage() {
       return;
     }
 
-    if (!newPlaylistName.trim()) {
+    if (targetMode === "new" && !newPlaylistName.trim()) {
       toast.error("Enter a playlist name");
+      return;
+    }
+
+    if (targetMode === "existing" && !targetPlaylistId) {
+      toast.error("Select a target playlist");
       return;
     }
 
@@ -278,38 +256,39 @@ export default function GenreExtractPage() {
         [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
       );
 
-      // Collect all track URIs
       const allUris = new Set<string>();
-      genres
-        .filter((g) => selectedGenres.has(g.id))
-        .forEach((g) => g.trackUris.forEach((uri) => allUris.add(uri)));
-
+      genres.filter((g) => selectedGenres.has(g.id)).forEach((g) => g.tracks.forEach((t) => allUris.add(t.uri)));
       const trackUrisArray = Array.from(allUris);
 
-      // Get user ID
-      const user = await sdk.currentUser.profile();
+      let playlistId: string;
+      let playlistName: string;
 
-      // Create playlist
-      const newPlaylist = await sdk.playlists.createPlaylist(user.id, {
-        name: newPlaylistName.trim(),
-        description: `Auto-generated by SyncSpot Genre Extraction Tool`,
-        public: false,
-      });
-
-      // Add tracks in batches of 100
-      for (let i = 0; i < trackUrisArray.length; i += 100) {
-        const batch = trackUrisArray.slice(i, i + 100);
-        await sdk.playlists.addItemsToPlaylist(newPlaylist.id, batch);
+      if (targetMode === "new") {
+        const user = await sdk.currentUser.profile();
+        const newPlaylist = await sdk.playlists.createPlaylist(user.id, {
+          name: newPlaylistName.trim(),
+          description: `Auto-generated by SyncSpot Genre Extraction Tool`,
+          public: false,
+        });
+        playlistId = newPlaylist.id;
+        playlistName = newPlaylistName.trim();
+      } else {
+        playlistId = targetPlaylistId;
+        playlistName = playlists.find((p) => p.id === targetPlaylistId)?.name || "playlist";
       }
 
-      toast.success(`Created "${newPlaylistName}" with ${trackUrisArray.length} songs!`);
+      // Add tracks in batches
+      for (let i = 0; i < trackUrisArray.length; i += 100) {
+        const batch = trackUrisArray.slice(i, i + 100);
+        await sdk.playlists.addItemsToPlaylist(playlistId, batch);
+      }
 
-      // Reset
+      toast.success(`Added ${trackUrisArray.length} songs to "${playlistName}"!`);
       setSelectedGenres(new Set());
       setNewPlaylistName("");
     } catch (error: any) {
-      console.error("Failed to create playlist:", error);
-      toast.error(error.message || "Failed to create playlist");
+      console.error("Failed:", error);
+      toast.error(error.message || "Failed");
     } finally {
       setIsCreating(false);
     }
@@ -319,10 +298,7 @@ export default function GenreExtractPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-spotify-green border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-text-secondary">Loading...</p>
-          </div>
+          <div className="w-12 h-12 border-4 border-spotify-green border-t-transparent rounded-full animate-spin" />
         </div>
       </MainLayout>
     );
@@ -330,23 +306,37 @@ export default function GenreExtractPage() {
 
   return (
     <MainLayout>
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          style: { background: "#181818", color: "#fff", border: "1px solid #282828" },
-        }}
-      />
+      <Toaster position="bottom-right" toastOptions={{ style: { background: "#181818", color: "#fff", border: "1px solid #282828" } }} />
+
+      {/* Preview Modal */}
+      <Modal isOpen={!!previewGenre} onClose={() => setPreviewGenre(null)} title={`${previewGenre?.name} Songs (${previewGenre?.count})`} size="lg">
+        <div className="max-h-96 overflow-y-auto space-y-2 custom-scrollbar">
+          {previewGenre?.tracks.map((track, idx) => (
+            <div key={track.uri} className="flex items-center gap-3 p-2 rounded-lg hover:bg-background-hover">
+              <span className="text-text-tertiary text-sm w-6">{idx + 1}</span>
+              {track.albumImage ? (
+                <img src={track.albumImage} alt="" className="w-10 h-10 rounded" />
+              ) : (
+                <div className="w-10 h-10 rounded bg-background-tertiary flex items-center justify-center">
+                  <Music className="w-4 h-4 text-text-tertiary" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-text-primary truncate font-medium">{track.name}</p>
+                <p className="text-text-secondary text-sm truncate">{track.artists}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Modal>
 
       <div className="space-y-6 max-w-4xl mx-auto">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
             <Filter className="w-8 h-8 text-spotify-green" />
             Genre Extraction Tool
           </h1>
-          <p className="text-text-secondary mt-2">
-            Select a playlist, choose languages/genres, and create a filtered playlist
-          </p>
+          <p className="text-text-secondary mt-2">Select a playlist, preview songs by genre, and add to any playlist</p>
         </div>
 
         {/* Playlist Selector */}
@@ -356,64 +346,58 @@ export default function GenreExtractPage() {
             <select
               value={selectedPlaylist}
               onChange={(e) => handlePlaylistSelect(e.target.value)}
-              className="w-full bg-background-tertiary text-text-primary px-4 py-3 rounded-lg border border-border focus:border-spotify-green focus:outline-none focus:ring-2 focus:ring-spotify-green/20"
+              className="w-full bg-background-tertiary text-text-primary px-4 py-3 rounded-lg border border-border focus:border-spotify-green focus:outline-none"
             >
               <option value="">Choose a playlist...</option>
-              {playlists.map((playlist) => (
-                <option key={playlist.id} value={playlist.id}>
-                  {playlist.name} ({playlist.total} songs)
-                </option>
+              {playlists.map((p) => (
+                <option key={p.id} value={p.id}>{p.name} ({p.total} songs)</option>
               ))}
             </select>
           </CardContent>
         </Card>
 
-        {/* Analyzing State */}
         {isAnalyzing && (
           <Card>
             <CardContent className="p-12 text-center">
               <Loader2 className="w-12 h-12 text-spotify-green animate-spin mx-auto mb-4" />
-              <p className="text-text-secondary">Analyzing all songs for languages/genres...</p>
-              <p className="text-text-tertiary text-sm mt-2">This may take a moment for large playlists</p>
+              <p className="text-text-secondary">Analyzing songs...</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Genre List */}
+        {/* Genre List with Preview */}
         {!isAnalyzing && genres.length > 0 && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-text-primary mb-4">
-                Detected Languages/Genres ({genres.length})
-              </h2>
-
-              <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Detected Languages/Genres</h2>
+              <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
                 {genres.map((genre) => (
-                  <button
+                  <div
                     key={genre.id}
-                    onClick={() => toggleGenre(genre.id)}
-                    className={`
-                      w-full flex items-center justify-between p-4 rounded-lg transition-all duration-200
-                      ${
-                        selectedGenres.has(genre.id)
-                          ? "bg-spotify-green/20 border-2 border-spotify-green"
-                          : "bg-background-tertiary hover:bg-background-hover border-2 border-transparent"
-                      }
-                    `}
+                    className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                      selectedGenres.has(genre.id)
+                        ? "bg-spotify-green/20 border-2 border-spotify-green"
+                        : "bg-background-tertiary hover:bg-background-hover border-2 border-transparent"
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: genre.color }}
-                      />
+                    <button onClick={() => toggleGenre(genre.id)} className="flex items-center gap-3 flex-1">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: genre.color }} />
                       <span className="font-medium text-text-primary">{genre.name}</span>
-                    </div>
+                      <span className="text-sm text-text-secondary">({genre.count} songs)</span>
+                    </button>
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-text-secondary">{genre.count} songs</span>
+                    <div className="flex items-center gap-2">
+                      {/* Preview Button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPreviewGenre(genre); }}
+                        className="p-2 rounded-lg hover:bg-background-hover text-text-secondary hover:text-text-primary transition-colors"
+                        title="Preview songs"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
                       {selectedGenres.has(genre.id) && <Check className="w-5 h-5 text-spotify-green" />}
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -424,45 +408,69 @@ export default function GenreExtractPage() {
         {genres.length > 0 && selectedGenres.size > 0 && (
           <Card>
             <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-text-primary font-medium">
-                    {selectedGenres.size} genre{selectedGenres.size > 1 ? "s" : ""} selected
-                  </p>
-                  <p className="text-sm text-text-secondary">{getTotalSelectedSongs()} unique songs</p>
-                </div>
+              <div>
+                <p className="text-text-primary font-medium">{selectedGenres.size} genre(s) selected</p>
+                <p className="text-sm text-text-secondary">{getTotalSelectedSongs()} unique songs</p>
               </div>
 
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">New Playlist Name</label>
+              {/* Target Mode Toggle */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTargetMode("new")}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                    targetMode === "new" ? "bg-spotify-green text-black" : "bg-background-tertiary text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  Create New Playlist
+                </button>
+                <button
+                  onClick={() => setTargetMode("existing")}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                    targetMode === "existing" ? "bg-spotify-green text-black" : "bg-background-tertiary text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  Add to Existing
+                </button>
+              </div>
+
+              {/* New Playlist Name */}
+              {targetMode === "new" && (
                 <input
                   type="text"
                   value={newPlaylistName}
                   onChange={(e) => setNewPlaylistName(e.target.value)}
-                  placeholder="My Playlist Mix"
-                  className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-spotify-green focus:border-transparent"
+                  placeholder="New Playlist Name"
+                  className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-spotify-green"
                 />
-              </div>
+              )}
 
-              <Button
-                variant="primary"
-                className="w-full py-4 text-lg"
-                onClick={extractToPlaylist}
-                isLoading={isCreating}
-              >
+              {/* Existing Playlist Selector */}
+              {targetMode === "existing" && (
+                <select
+                  value={targetPlaylistId}
+                  onChange={(e) => setTargetPlaylistId(e.target.value)}
+                  className="w-full bg-background-tertiary text-text-primary px-4 py-3 rounded-lg border border-border focus:border-spotify-green focus:outline-none"
+                >
+                  <option value="">Select target playlist...</option>
+                  {playlists.filter((p) => p.id !== "liked-songs" && p.id !== selectedPlaylist).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+
+              <Button variant="primary" className="w-full py-4 text-lg" onClick={extractToPlaylist} isLoading={isCreating}>
                 <Plus className="w-5 h-5 mr-2" />
-                Create New Playlist
+                {targetMode === "new" ? "Create New Playlist" : "Add to Playlist"}
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Empty State */}
         {!isAnalyzing && genres.length === 0 && selectedPlaylist && (
           <Card>
             <CardContent className="p-12 text-center">
               <Music className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-              <p className="text-text-secondary">No genres detected in this playlist</p>
+              <p className="text-text-secondary">No genres detected</p>
             </CardContent>
           </Card>
         )}
