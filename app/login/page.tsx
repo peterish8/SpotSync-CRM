@@ -49,7 +49,7 @@ function LoginContent() {
         {/* Login Button */}
         <button
           onClick={handleLogin}
-          className="w-full group relative flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-black bg-spotify-green hover:bg-spotify-green-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spotify-green transition-all duration-200 transform hover:scale-[1.02]"
+          className="w-full relative z-50 flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-black bg-spotify-green hover:bg-spotify-green-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spotify-green transition-all duration-200 transform hover:scale-[1.02]"
         >
           Connect with Spotify
         </button>

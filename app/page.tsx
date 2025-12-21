@@ -1,11 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { Music, Layers, Filter, Users, Sparkles, ArrowRight, Check, Zap } from "lucide-react";
+import { spotify } from "@/lib/spotify/auth";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function LandingPage() {
+  const handleLogin = async () => {
+    console.log("Login button clicked");
+    try {
+      await spotify.authenticate();
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      toast.error(error.message || "Failed to connect to Spotify");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f1a0f] to-[#0a0a0a]">
+      <Toaster position="top-center" />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -15,12 +27,12 @@ export default function LandingPage() {
             </div>
             <span className="text-xl font-bold text-white">SyncSpot</span>
           </div>
-          <Link
-            href="/login"
-            className="px-6 py-2.5 bg-spotify-green hover:bg-spotify-green-hover text-black font-semibold rounded-full transition-all hover:scale-105"
+          <button
+            onClick={handleLogin}
+            className="relative z-50 px-6 py-2.5 bg-spotify-green hover:bg-spotify-green-hover text-black font-semibold rounded-full transition-all hover:scale-105"
           >
             Get Started
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -48,13 +60,13 @@ export default function LandingPage() {
 
           {/* CTA Buttons */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link
-              href="/login"
-              className="group px-8 py-4 bg-spotify-green hover:bg-spotify-green-hover text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2"
+            <button
+              onClick={handleLogin}
+              className="group relative z-50 px-8 py-4 bg-spotify-green hover:bg-spotify-green-hover text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2"
             >
               Connect with Spotify
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </button>
             <a
               href="#features"
               className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-full transition-all border border-white/10"
@@ -208,13 +220,13 @@ export default function LandingPage() {
           <p className="text-lg text-white/60 mb-8">
             Connect your Spotify account and take control of your music library.
           </p>
-          <Link
-            href="/login"
+          <button
+            onClick={handleLogin}
             className="inline-flex items-center gap-2 px-8 py-4 bg-spotify-green hover:bg-spotify-green-hover text-black font-bold rounded-full transition-all hover:scale-105"
           >
             <Music className="w-5 h-5" />
             Connect with Spotify
-          </Link>
+          </button>
         </div>
       </section>
 
