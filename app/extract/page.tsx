@@ -77,12 +77,23 @@ const KPOP_ARTISTS = [
   "kpop demon hunters cast",
 ];
 
-// HINDI ARTISTS - Exact Spotify display names (NO overlap with Tamil)
+// HINDI ARTISTS - Exact Spotify display names (40+ artists)
 const HINDI_ARTISTS = [
-  "arijit singh", "neha kakkar", "badshah", "pritam",
-  "amit trivedi", "vishal-shekhar", "atif aslam", "honey singh",
-  "kumar sanu", "sonu nigam", "jubin nautiyal", "armaan malik",
-  "darshan raval", "shreya ghoshal", // Shreya is mostly Hindi
+  // Playback / Indie Singers
+  "aashir wajahat", "aastha gill", "amit mishra", "ananya birla", "anurag kulkarni",
+  "anuv jain", "arijit singh", "arjun kanungo", "armaan malik", "diljit dosanjh",
+  "divya kumar", "jasmine sandlas", "jonita gandhi", "kanika kapoor", "king",
+  "mitraz", "mohit chauhan", "nehaal naseem", "prateek kuhad", "raghav chaitanya",
+  "sabrina gomes", "sachet tandon", "sunidhi chauhan", "vipin aneja",
+  "neha kakkar", "badshah", "atif aslam", "honey singh", "kumar sanu",
+  "sonu nigam", "jubin nautiyal", "darshan raval", "shreya ghoshal",
+  
+  // Music Directors / Producers
+  "amit trivedi", "pritam", "sachin-jigar", "vishal dadlani", "shekhar ravjiani",
+  "vishal-shekhar",
+  
+  // Lyricists
+  "amitabh bhattacharya", "irshad kamil", "kumaar", "kunaal vermaa", "manoj muntashir",
 ];
 
 // ENGLISH ARTISTS - Canonical Spotify list (220+ artists)
