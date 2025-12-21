@@ -225,23 +225,34 @@ interface SimplifiedPlaylist {
 function detectLanguage(trackName: string, artistNames: string[]): string {
   const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
 
-  // 1. K-POP FIRST (most distinct, avoid false positives)
-  if (KOREAN_REGEX.test(trackName)) return "korean";
-  if (lowerArtists.some((name) => KPOP_ARTISTS.some((kp) => name.includes(kp)))) return "korean";
+  // Helper: Check if artist name EXACTLY matches or STARTS with canonical name
+  const matchesArtist = (artistList: string[]) => 
+    lowerArtists.some((artist) => 
+      artistList.some((canonical) => 
+        artist === canonical || artist.startsWith(canonical + " ") || artist.endsWith(" " + canonical)
+      )
+    );
 
-  // 2. TAMIL (strong composer/singer match)
+  // 1. K-POP FIRST (most distinct)
+  if (KOREAN_REGEX.test(trackName)) return "korean";
+  if (matchesArtist(KPOP_ARTISTS)) return "korean";
+
+  // 2. TAMIL
   if (TAMIL_REGEX.test(trackName)) return "tamil";
-  if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) return "tamil";
+  if (matchesArtist(TAMIL_ARTISTS)) return "tamil";
 
   // 3. TELUGU
   if (TELUGU_REGEX.test(trackName)) return "telugu";
-  if (lowerArtists.some((name) => TELUGU_ARTISTS.some((te) => name.includes(te)))) return "telugu";
+  if (matchesArtist(TELUGU_ARTISTS)) return "telugu";
 
   // 4. HINDI
   if (HINDI_REGEX.test(trackName)) return "hindi";
-  if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) return "hindi";
+  if (matchesArtist(HINDI_ARTISTS)) return "hindi";
 
-  // 5. DEFAULT: English
+  // 5. ENGLISH (explicit match, not just fallback)
+  if (matchesArtist(ENGLISH_ARTISTS)) return "english";
+
+  // 6. DEFAULT: English (if no match found)
   return "english";
 }
 
