@@ -81,35 +81,84 @@ const HINDI_ARTISTS = [
   "darshan raval", "shreya ghoshal", // Shreya is mostly Hindi
 ];
 
-// ENGLISH ARTISTS - Canonical Spotify list (80+ artists)
+// ENGLISH ARTISTS - Canonical Spotify list (220+ artists)
 const ENGLISH_ARTISTS = [
   // POP / MAINSTREAM
   "taylor swift", "ed sheeran", "ariana grande", "justin bieber", "the weeknd",
   "dua lipa", "billie eilish", "olivia rodrigo", "selena gomez", "shawn mendes",
   "camila cabello", "harry styles", "zayn", "miley cyrus", "lady gaga",
-  "katy perry", "rihanna", "bruno mars", "sia", "adele",
+  "katy perry", "rihanna", "bruno mars", "sia", "adele", "britney spears",
+  "madonna", "one direction", "justin timberlake", "*nsync", "abba",
+  "benson boone", "chappell roan", "gracie abrams", "sabrina carpenter",
+  "tate mcrae", "meghan trainor", "charlie puth", "ava max", "zara larsson",
   
   // HIP-HOP / RAP
   "drake", "post malone", "travis scott", "kanye west", "eminem",
   "kendrick lamar", "j. cole", "jay-z", "future", "lil wayne",
   "doja cat", "nicki minaj", "cardi b", "21 savage", "logic",
+  "a$ap rocky", "a boogie wit da hoodie", "don toliver", "playboi carti",
+  "young thug", "wiz khalifa", "nav", "metro boomin", "swae lee",
+  "lil nas x", "coi leray", "sza",
   
   // ROCK / ALTERNATIVE / INDIE
   "coldplay", "imagine dragons", "onerepublic", "maroon 5", "linkin park",
   "green day", "the chainsmokers", "arctic monkeys", "the 1975",
   "panic! at the disco", "fall out boy", "radiohead", "u2", "the killers", "foo fighters",
+  "the neighbourhood", "the strokes", "the smiths", "hozier", "mitski",
+  "conan gray", "lana del rey", "halsey", "girl in red", "the marías",
   
   // EDM / ELECTRONIC
   "calvin harris", "avicii", "alan walker", "martin garrix", "zedd",
   "kygo", "marshmello", "david guetta", "tiësto", "deadmau5",
+  "daft punk", "clean bandit", "steve aoki", "slander", "m83",
   
   // R&B / SOUL / ALT-POP
   "frank ocean", "sam smith", "halsey", "lana del rey", "charlie puth",
   "john legend", "usher", "chris brown", "the neighbourhood", "tate mcrae",
+  "kehlani", "victoria monét", "pink sweat$",
   
-  // ADDITIONAL TOP ARTISTS
-  "lauv", "ava max", "bebe rexha", "niall horan", "louis tomlinson",
-  "james arthur", "lewis capaldi", "hozier", "troye sivan", "glass animals",
+  // SINGER-SONGWRITERS / INDIE POP
+  "lauv", "james arthur", "lewis capaldi", "troye sivan", "glass animals",
+  "jeremy zucker", "alec benjamin", "dean lewis", "james bay", "passenger",
+  "kodaline", "vance joy", "lord huron", "tom odell", "ashe", "jp saxe",
+  "julia michaels", "em beihold", "stephen sanchez", "henry moodie",
+  "duncan laurence", "ricky montgomery", "david kushner",
+  
+  // FILM/TV COMPOSERS
+  "hans zimmer", "alan silvestri", "james newton howard", "michael giacchino",
+  "ramin djawadi", "justin hurwitz", "ludwig göransson", "kris bowers",
+  "gibran alcocer", "samuel kim", "tommee profitt",
+  
+  // EMERGING / VIRAL ARTISTS
+  "d4vd", "artemas", "isabel larosa", "kenya grace", "dasha",
+  "gigi perez", "good neighbours", "mark ambor", "new west",
+  "sub urban", "jvke", "dominic fike", "djo", "gayle", "jax",
+  "salem ilese", "vaultboy", "yungblud", "mehro", "mrld", "sombr",
+  "madison beer", "bella poarch", "audrey nuna", "rei ami",
+  
+  // ADDITIONAL ARTISTS FROM USER LIST
+  "adam levine", "addison rae", "alex porat", "alex sampson", "alex warren",
+  "alexander rybak", "alina kay", "amelia moore", "anne-marie", "anitta",
+  "anthony lazaro", "august moon", "avery lynch", "becca lynn", "becky g",
+  "bo burnham", "bondex", "børns", "carys", "caleb hearn", "chezile",
+  "chiara savasta", "christina perri", "connor price", "conor maynard",
+  "danil muzik", "daya", "dylan matthew", "emeline", "elley duhé",
+  "ellie dixon", "ellie goulding", "engelbert humperdinck", "finneas",
+  "forrest frank", "gym class heroes", "hugh jackman", "iggy pop",
+  "isabela merced", "jawny", "jamie miller", "jason derulo", "jenna raine",
+  "jim croce", "john michael howell", "johnny marr", "johnny orlando",
+  "k'naan", "keala settle", "laura alden", "libianca", "lola young",
+  "loren allred", "lukas graham", "madilyn bailey", "maren morris",
+  "mareux", "matthew ifield", "michelle williams", "miranda lambert",
+  "modern talking", "moondeity", "neffex", "neriah", "natasha bedingfield",
+  "nathan evans", "nelly furtado", "neoni", "nic d", "nicky youre",
+  "paris paloma", "pharrell williams", "phillip phillips", "public",
+  "radwimps", "richy mitch & the coal miners", "rio romeo", "rosa linn",
+  "ryan gosling", "ryan mack", "sam tinnesz", "sasha alex sloan", "seafret",
+  "sean kingston", "sean paul", "selena gomez & the scene", "shotgun willy",
+  "sidewalks and skeletons", "teddybears", "the greatest showman ensemble",
+  "the score", "timbaland", "blue", "wham!", "zac efron", "zendaya",
+  "zombies – cast", "hey daisy", "katemuzic", "kenzie", "yami safdie", "yung kai",
 ];
 
 // Unicode character ranges for script detection
