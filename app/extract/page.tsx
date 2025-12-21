@@ -176,10 +176,28 @@ const ENGLISH_ARTISTS = [
   "zombies – cast", "hey daisy", "katemuzic", "kenzie", "yami safdie", "yung kai",
 ];
 
+// TELUGU ARTISTS - Spotify display names (30+ artists)
+const TELUGU_ARTISTS = [
+  // Playback / Indie Singers
+  "anurag kulkarni", "ananya bhat", "harini ivaturi", "kapil kapilan",
+  "ramya behara", "ramya bhat abhyankar", "sameera bharadwaj", "sanjith hegde",
+  "sreerama chandra", "sunitha sarathy", "hemachandra", "yazin nizar",
+  "revanth", "kala bhairava", "sunitha", "geetha madhuri",
+  
+  // Music Directors / Composers
+  "devi sri prasad", "thaman s", "ravi basrur", "hesham abdul wahab",
+  "m. m. keeravani", "mani sharma", "kalyani malik", "anup rubens",
+  "gopi sundar",
+  
+  // Lyricists
+  "ramajogayya sastry", "sirivennela seetharama sastry", "chandrabose",
+];
+
 // Unicode character ranges for script detection
 const TAMIL_REGEX = /[\u0B80-\u0BFF]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 const HINDI_REGEX = /[\u0900-\u097F]/;
+const TELUGU_REGEX = /[\u0C00-\u0C7F]/;
 
 interface TrackInfo {
   uri: string;
@@ -203,7 +221,7 @@ interface SimplifiedPlaylist {
   total: number;
 }
 
-// DETECTION ORDER MATTERS! Korean first (most distinct), then Tamil, then Hindi, else English
+// DETECTION ORDER: K-pop > Tamil > Telugu > Hindi > English
 function detectLanguage(trackName: string, artistNames: string[]): string {
   const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
 
@@ -215,18 +233,22 @@ function detectLanguage(trackName: string, artistNames: string[]): string {
   if (TAMIL_REGEX.test(trackName)) return "tamil";
   if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) return "tamil";
 
-  // 3. HINDI
+  // 3. TELUGU
+  if (TELUGU_REGEX.test(trackName)) return "telugu";
+  if (lowerArtists.some((name) => TELUGU_ARTISTS.some((te) => name.includes(te)))) return "telugu";
+
+  // 4. HINDI
   if (HINDI_REGEX.test(trackName)) return "hindi";
   if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) return "hindi";
 
-  // 4. DEFAULT: English
+  // 5. DEFAULT: English
   return "english";
 }
 
 
 function getGenreColor(genre: string): string {
   const colors: Record<string, string> = {
-    tamil: "#F97316", english: "#3B82F6", korean: "#8B5CF6", hindi: "#EC4899",
+    tamil: "#F97316", english: "#3B82F6", korean: "#8B5CF6", hindi: "#EC4899", telugu: "#14B8A6",
   };
   return colors[genre.toLowerCase()] || "#6B7280";
 }
