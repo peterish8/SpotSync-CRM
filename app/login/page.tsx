@@ -21,7 +21,6 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-background-primary flex flex-col items-center justify-center p-4">
-      <Toaster position="top-center" />
       <div className="w-full max-w-md space-y-6 bg-background-secondary p-8 rounded-xl border border-border">
         {/* Session Timeout Message */}
         {isTimeout && (
