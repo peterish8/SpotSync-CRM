@@ -7,6 +7,7 @@ import { Button, Card, CardContent } from "@/components/ui";
 import { Users, Copy, Check, Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
+import { isSessionTimeoutError, handleSessionTimeout } from "@/lib/spotify/auth";
 
 interface SimplifiedPlaylist {
   id: string;
@@ -56,8 +57,12 @@ export default function ArtistExtractorPage() {
             total: p.tracks?.total || 0,
           })),
         ]);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load playlists:", error);
+        if (isSessionTimeoutError(error)) {
+          handleSessionTimeout(router);
+          return;
+        }
         toast.error("Failed to load playlists");
       } finally {
         setIsLoading(false);
