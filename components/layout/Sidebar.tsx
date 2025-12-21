@@ -19,9 +19,11 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-spotify-green rounded-lg flex items-center justify-center">
-            <Music className="w-6 h-6 text-black" />
-          </div>
+          <img 
+            src="/favicon.ico" 
+            alt="SyncSpot" 
+            className="w-10 h-10 rounded-lg"
+          />
           <div>
             <h1 className="font-bold text-text-primary">SyncSpot</h1>
             <p className="text-xs text-text-secondary">CRM</p>

@@ -20,7 +20,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Header />
 
         {/* Page Content */}
-        <main className="p-6">{children}</main>
+        <main className="p-6 pt-4">{children}</main>
       </div>
     </div>
   );
