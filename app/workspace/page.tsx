@@ -94,7 +94,7 @@ export default function WorkspacePage() {
     fetchPlaylists();
   }, [router, setAvailablePlaylists]);
 
-  // Load playlist tracks with full pagination
+  // Load first 50 tracks of a playlist
   async function loadPlaylistTracks(playlistId: string, side: "A" | "B") {
     try {
       const sdk = SpotifyApi.withUserAuthorization(
@@ -104,20 +104,16 @@ export default function WorkspacePage() {
       );
 
       let playlist: Playlist;
-      const allTracks: Track[] = [];
 
-      // Handle Liked Songs specially
       if (playlistId === "liked-songs") {
-        toast.loading("Loading all liked songs...", { id: "loading" });
+        const response = await sdk.currentUser.tracks.savedTracks(50, 0);
         
-        let offset = 0;
-        const limit = 50;
-        let hasMore = true;
-
-        while (hasMore) {
-          const response = await sdk.currentUser.tracks.savedTracks(limit, offset);
-          
-          const tracks = response.items
+        playlist = {
+          id: "liked-songs",
+          name: "Liked Songs",
+          images: [],
+          total: response.total,
+          tracks: response.items
             .filter((item) => item.track)
             .map((item) => {
               const track = item.track as any;
@@ -132,35 +128,18 @@ export default function WorkspacePage() {
                 uri: track.uri,
                 duration_ms: track.duration_ms,
               };
-            });
-          
-          allTracks.push(...tracks);
-          offset += limit;
-          hasMore = response.next !== null && offset < response.total;
-        }
+            }),
+        };
+      } else {
+        const playlistInfo = await sdk.playlists.getPlaylist(playlistId);
+        const response = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, 0);
 
         playlist = {
-          id: "liked-songs",
-          name: "Liked Songs",
-          images: [],
-          total: allTracks.length,
-          tracks: allTracks,
-        };
-
-        toast.dismiss("loading");
-      } else {
-        // Regular playlist with pagination
-        const playlistInfo = await sdk.playlists.getPlaylist(playlistId);
-        toast.loading(`Loading ${playlistInfo.name}...`, { id: "loading" });
-        
-        let offset = 0;
-        const limit = 50;
-        let hasMore = true;
-
-        while (hasMore) {
-          const response = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, limit, offset);
-          
-          const tracks = response.items
+          id: playlistInfo.id,
+          name: playlistInfo.name,
+          images: playlistInfo.images || [],
+          total: playlistInfo.tracks.total,
+          tracks: response.items
             .filter((item) => item.track && item.track.type === "track")
             .map((item) => {
               const track = item.track as any;
@@ -175,22 +154,8 @@ export default function WorkspacePage() {
                 uri: track.uri,
                 duration_ms: track.duration_ms,
               };
-            });
-          
-          allTracks.push(...tracks);
-          offset += limit;
-          hasMore = response.next !== null && offset < response.total;
-        }
-
-        playlist = {
-          id: playlistInfo.id,
-          name: playlistInfo.name,
-          images: playlistInfo.images || [],
-          total: allTracks.length,
-          tracks: allTracks,
+            }),
         };
-
-        toast.dismiss("loading");
       }
 
       if (side === "A") {
@@ -199,13 +164,79 @@ export default function WorkspacePage() {
         setPlaylistB(playlist);
       }
 
-      toast.success(`Loaded ${playlist.name} (${playlist.total} songs)`);
+      toast.success(`Loaded ${playlist.name} (${playlist.tracks.length}/${playlist.total})`);
     } catch (error) {
-      toast.dismiss("loading");
       console.error("Failed to load playlist:", error);
       toast.error("Failed to load playlist tracks");
     }
   }
+
+  // Load more tracks for a playlist
+  async function loadMoreTracks(side: "A" | "B") {
+    const playlist = side === "A" ? playlistA : playlistB;
+    if (!playlist) return;
+
+    const currentCount = playlist.tracks.length;
+    if (currentCount >= playlist.total) {
+      toast.success("All tracks loaded!");
+      return;
+    }
+
+    try {
+      const sdk = SpotifyApi.withUserAuthorization(
+        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
+        process.env.NEXT_PUBLIC_REDIRECT_URI!,
+        [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
+      );
+
+      let newTracks: Track[] = [];
+
+      if (playlist.id === "liked-songs") {
+        const response = await sdk.currentUser.tracks.savedTracks(50, currentCount);
+        newTracks = response.items
+          .filter((item) => item.track)
+          .map((item) => {
+            const track = item.track as any;
+            return {
+              id: track.id,
+              name: track.name,
+              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+              album: {
+                name: track.album.name,
+                images: track.album.images || [],
+              },
+              uri: track.uri,
+              duration_ms: track.duration_ms,
+            };
+          });
+      } else {
+        const response = await sdk.playlists.getPlaylistItems(playlist.id, undefined, undefined, 50, currentCount);
+        newTracks = response.items
+          .filter((item) => item.track && item.track.type === "track")
+          .map((item) => {
+            const track = item.track as any;
+            return {
+              id: track.id,
+              name: track.name,
+              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+              album: {
+                name: track.album.name,
+                images: track.album.images || [],
+              },
+              uri: track.uri,
+              duration_ms: track.duration_ms,
+            };
+          });
+      }
+
+      appendTracksToPlaylist(newTracks, side);
+      toast.success(`Loaded ${newTracks.length} more tracks`);
+    } catch (error) {
+      console.error("Failed to load more tracks:", error);
+      toast.error("Failed to load more tracks");
+    }
+  }
+
 
   // Drag handlers
   function handleDragStart(event: DragStartEvent) {
