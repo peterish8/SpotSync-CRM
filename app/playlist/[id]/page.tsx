@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { SpotifyApi, Scopes } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { Music, ArrowLeft, Clock, Heart, Calendar } from "lucide-react";
+import { Music, ArrowLeft, Clock, Heart, Calendar, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
+import { isSessionTimeoutError, handleSessionTimeout } from "@/lib/spotify/auth";
 
 interface PlaylistTrack {
   id: string;
@@ -64,6 +65,11 @@ export default function PlaylistDetailPage() {
   const [playlist, setPlaylist] = useState<PlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  
+  // Prefetch state
+  const [prefetchedTracks, setPrefetchedTracks] = useState<PlaylistTrack[]>([]);
+  const [isPrefetching, setIsPrefetching] = useState(false);
+  const prefetchRef = useRef<boolean>(false);
 
   useEffect(() => {
     async function fetchPlaylist() {
@@ -81,7 +87,6 @@ export default function PlaylistDetailPage() {
         }
 
         if (playlistId === "liked-songs") {
-          // Fetch Liked Songs
           const response = await sdk.currentUser.tracks.savedTracks(50, 0);
           
           setPlaylist({
@@ -105,7 +110,6 @@ export default function PlaylistDetailPage() {
             })),
           });
         } else {
-          // Fetch regular playlist
           const playlistInfo = await sdk.playlists.getPlaylist(playlistId);
           const tracksResponse = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, 0);
 
@@ -135,8 +139,12 @@ export default function PlaylistDetailPage() {
               }),
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch playlist:", error);
+        if (isSessionTimeoutError(error)) {
+          handleSessionTimeout(router);
+          return;
+        }
       } finally {
         setLoading(false);
       }
@@ -147,12 +155,85 @@ export default function PlaylistDetailPage() {
     }
   }, [playlistId, router]);
 
+  // Prefetch next 50 tracks on hover
+  async function prefetchNextBatch() {
+    if (!playlist || isPrefetching || prefetchRef.current || prefetchedTracks.length > 0) return;
+    if (playlist.tracks.length >= playlist.total) return;
+
+    prefetchRef.current = true;
+    setIsPrefetching(true);
+
+    try {
+      const sdk = SpotifyApi.withUserAuthorization(
+        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
+        process.env.NEXT_PUBLIC_REDIRECT_URI!,
+        [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
+      );
+
+      const currentCount = playlist.tracks.length;
+      let newTracks: PlaylistTrack[] = [];
+
+      if (playlistId === "liked-songs") {
+        const response = await sdk.currentUser.tracks.savedTracks(50, currentCount);
+        newTracks = response.items.map((item) => ({
+          id: item.track.id,
+          name: item.track.name,
+          artists: item.track.artists.map((a) => ({ id: a.id, name: a.name })),
+          album: {
+            name: item.track.album.name,
+            images: item.track.album.images,
+          },
+          duration_ms: item.track.duration_ms,
+          uri: item.track.uri,
+          added_at: item.added_at,
+        }));
+      } else {
+        const response = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, currentCount);
+        newTracks = response.items
+          .filter((item) => item.track && item.track.type === "track")
+          .map((item) => {
+            const track = item.track as any;
+            return {
+              id: track.id,
+              name: track.name,
+              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+              album: {
+                name: track.album.name,
+                images: track.album.images,
+              },
+              duration_ms: track.duration_ms,
+              uri: track.uri,
+              added_at: item.added_at,
+            };
+          });
+      }
+
+      setPrefetchedTracks(newTracks);
+    } catch (error) {
+      console.log("Prefetch failed silently");
+    } finally {
+      setIsPrefetching(false);
+    }
+  }
+
   async function loadMore() {
     if (!playlist || loadingMore) return;
     
     const currentCount = playlist.tracks.length;
     if (currentCount >= playlist.total) return;
 
+    // Use prefetched data if available
+    if (prefetchedTracks.length > 0) {
+      setPlaylist((prev) => prev ? {
+        ...prev,
+        tracks: [...prev.tracks, ...prefetchedTracks],
+      } : null);
+      setPrefetchedTracks([]);
+      prefetchRef.current = false;
+      return;
+    }
+
+    // Otherwise fetch fresh
     setLoadingMore(true);
     try {
       const sdk = SpotifyApi.withUserAuthorization(
@@ -206,6 +287,7 @@ export default function PlaylistDetailPage() {
       console.error("Failed to load more:", error);
     } finally {
       setLoadingMore(false);
+      prefetchRef.current = false;
     }
   }
 
@@ -233,6 +315,7 @@ export default function PlaylistDetailPage() {
   }
 
   const isLikedSongs = playlistId === "liked-songs";
+  const hasMore = playlist.tracks.length < playlist.total;
 
   return (
     <MainLayout>
@@ -272,7 +355,7 @@ export default function PlaylistDetailPage() {
             <div className="flex items-center gap-2 text-sm text-text-secondary">
               <span className="font-medium text-text-primary">{playlist.owner.display_name}</span>
               <span>•</span>
-              <span>{playlist.total} songs</span>
+              <span>{playlist.tracks.length}/{playlist.total} songs</span>
               <span>•</span>
               <span>{formatTotalDuration(playlist.tracks)}</span>
             </div>
@@ -302,12 +385,10 @@ export default function PlaylistDetailPage() {
                 key={`${track.id}-${index}`}
                 className="grid grid-cols-[40px_1fr_1fr_120px_80px] gap-4 px-4 py-3 hover:bg-background-hover transition-colors group"
               >
-                {/* Track Number */}
                 <div className="flex items-center justify-center text-text-tertiary text-sm">
                   {index + 1}
                 </div>
 
-                {/* Title & Artist */}
                 <div className="flex items-center gap-3 min-w-0">
                   {track.album.images?.[0] ? (
                     <img
@@ -328,17 +409,14 @@ export default function PlaylistDetailPage() {
                   </div>
                 </div>
 
-                {/* Album */}
                 <div className="flex items-center min-w-0">
                   <p className="text-sm text-text-secondary truncate">{track.album.name}</p>
                 </div>
 
-                {/* Date Added */}
                 <div className="flex items-center">
                   <p className="text-sm text-text-tertiary">{formatDate(track.added_at)}</p>
                 </div>
 
-                {/* Duration */}
                 <div className="flex items-center justify-end">
                   <p className="text-sm text-text-tertiary">{formatDuration(track.duration_ms)}</p>
                 </div>
@@ -346,17 +424,25 @@ export default function PlaylistDetailPage() {
             ))}
           </div>
 
-          {/* Load More */}
-          {playlist.tracks.length < playlist.total && (
+          {/* Load More with Hover Prefetch */}
+          {hasMore && (
             <div className="p-4 border-t border-border">
-              <Button
-                variant="secondary"
-                className="w-full"
+              <button
                 onClick={loadMore}
-                isLoading={loadingMore}
+                onMouseEnter={prefetchNextBatch}
+                disabled={loadingMore}
+                className="w-full py-3 flex items-center justify-center gap-2 
+                           bg-background-tertiary hover:bg-background-hover 
+                           text-text-secondary hover:text-text-primary
+                           rounded-lg transition-colors font-medium disabled:opacity-50"
               >
-                Load More ({playlist.total - playlist.tracks.length} remaining)
-              </Button>
+                {loadingMore ? (
+                  <div className="w-5 h-5 border-2 border-text-secondary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ChevronDown className="w-5 h-5" />
+                )}
+                Load 50 More ({playlist.total - playlist.tracks.length} remaining)
+              </button>
             </div>
           )}
         </div>
