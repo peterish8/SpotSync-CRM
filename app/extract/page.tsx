@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { SpotifyApi, Scopes } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
-import { Button, Card, CardContent, Modal } from "@/components/ui";
+import { Button, Card, CardContent, Modal, MagicDropdown } from "@/components/ui";
 import { Check, Loader2, Music, Filter, Plus, Eye, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
@@ -546,16 +546,17 @@ export default function GenreExtractPage() {
         <Card>
           <CardContent className="p-6">
             <label className="block text-text-primary font-medium mb-3">Select Playlist to Analyze</label>
-            <select
+            <MagicDropdown
               value={selectedPlaylist}
-              onChange={(e) => handlePlaylistSelect(e.target.value)}
-              className="w-full bg-background-tertiary text-text-primary px-4 py-3 rounded-lg border border-border focus:border-spotify-green focus:outline-none"
-            >
-              <option value="">Choose a playlist...</option>
-              {playlists.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} ({p.total} songs)</option>
-              ))}
-            </select>
+              onChange={handlePlaylistSelect}
+              placeholder="Select a playlist to analyze..."
+              options={playlists.map((p) => ({
+                value: p.id,
+                label: p.name,
+                subtitle: `${p.total} songs`,
+                icon: <Music className="w-4 h-4" />,
+              }))}
+            />
           </CardContent>
         </Card>
 

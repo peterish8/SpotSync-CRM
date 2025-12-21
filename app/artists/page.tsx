@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { SpotifyApi, Scopes } from "@spotify/web-api-ts-sdk";
 import { MainLayout } from "@/components/layout";
-import { Button, Card, CardContent } from "@/components/ui";
-import { Users, Copy, Check, Loader2, ChevronDown } from "lucide-react";
+import { Button, Card, CardContent, MagicDropdown } from "@/components/ui";
+import { Users, Copy, Check, Loader2, ChevronDown, Music } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { isSessionTimeoutError, handleSessionTimeout } from "@/lib/spotify/auth";
@@ -260,26 +260,17 @@ export default function ArtistExtractorPage() {
         </div>
 
         {/* Playlist Selector */}
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-spotify-green to-emerald-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-          <div className="relative bg-background-secondary border border-border rounded-xl p-1 overflow-visible">
-            <div className="relative">
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary pointer-events-none" />
-              <select
-                value={selectedPlaylist}
-                onChange={(e) => handlePlaylistSelect(e.target.value)}
-                className="w-full appearance-none bg-transparent text-text-primary text-lg font-medium px-4 py-4 rounded-lg cursor-pointer focus:outline-none hover:bg-white/5 transition-colors"
-              >
-                <option value="" className="bg-background-secondary text-text-secondary">Select a playlist to extract artists from...</option>
-                {playlists.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-background-secondary text-text-primary py-2">
-                    {p.name} • {p.total} list
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+        <MagicDropdown
+          value={selectedPlaylist}
+          onChange={handlePlaylistSelect}
+          placeholder="Select a playlist to extract artists from..."
+          options={playlists.map((p) => ({
+            value: p.id,
+            label: p.name,
+            subtitle: `${p.total} songs`,
+            icon: <Music className="w-4 h-4" />,
+          }))}
+        />
 
         {isExtracting && (
           <Card>
