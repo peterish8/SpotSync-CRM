@@ -8,30 +8,62 @@ import { Check, Loader2, Music, Filter, Plus, Eye, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
-// Tamil artists database
+// ====== SPOTIFY-MATCHED CANONICAL ARTIST LISTS ======
+
+// TAMIL ARTISTS - Exact Spotify display names
 const TAMIL_ARTISTS = [
+  // Music Directors / Composers (strongest signal)
   "a.r. rahman", "anirudh ravichander", "yuvan shankar raja",
-  "harris jayaraj", "santhosh narayanan", "ilaiyaraaja",
-  "devi sri prasad", "g.v. prakash kumar", "d. imman", "sid sriram",
-  "shreya ghoshal", "chinmayi", "haricharan", "pradeep kumar",
-  "sean roldan", "hip hop tamizha", "vijay antony", "leon james",
-  "d imman", "c. sathya", "sam c.s.", "c sathya", "ghibran",
+  "harris jayaraj", "santhosh narayanan", "g. v. prakash",
+  "ilaiyaraaja", "d. imman", "vidyasagar", "deva", "ghibran",
+  "sam c.s.", "sean roldan", "vishal chandrashekhar", "justin prabhakaran",
+  
+  // Male Playback Singers
+  "sid sriram", "karthik", "hariharan", "s. p. balasubrahmanyam",
+  "vijay yesudas", "pradeep kumar", "haricharan", "shankar mahadevan",
+  
+  // Female Playback Singers
+  "chinmayi", "swetha mohan", "k. s. chithra", "dhee",
+  "andrea jeremiah", "jonita gandhi", "sadhana sargam",
+  
+  // Indie / Folk / Modern Tamil
+  "ofro", "asal kolaar", "hip hop tamizha", "arivu",
+  "paal dabba", "srinisha jayaseelan",
 ];
 
-const KPOP_PATTERNS = [
-  "bts", "blackpink", "exo", "twice", "iu", "newjeans",
-  "stray kids", "seventeen", "red velvet", "itzy", "enhypen",
-  "aespa", "nct", "txt", "le sserafim", "ive", "gidle",
-  "(g)i-dle", "monsta x", "got7", "mamamoo", "bigbang",
+// K-POP ARTISTS - Exact Spotify display names (checked FIRST - highest priority)
+const KPOP_ARTISTS = [
+  // TOP-TIER MALE GROUPS
+  "bts", "exo", "seventeen", "stray kids", "ateez", "txt",
+  "nct", "nct 127", "nct dream", "enhypen", "monsta x", "got7",
+  "bigbang", "ikon", "treasure", "shinee", "the boyz",
+  
+  // TOP-TIER FEMALE GROUPS
+  "blackpink", "twice", "red velvet", "itzy", "aespa", "ive",
+  "le sserafim", "newjeans", "(g)i-dle", "stayc", "illit",
+  "babymonster", "oh my girl", "mamamoo",
+  
+  // MALE SOLOISTS
+  "jungkook", "v", "jimin", "rm", "agust d", "baekhyun",
+  "taemin", "kai", "zico", "psy", "g-dragon", "jay park",
+  
+  // FEMALE SOLOISTS
+  "iu", "jennie", "rosé", "lisa", "chung ha", "sunmi",
+  "taeyeon", "hwasa", "jeon somi", "heize", "bibi",
+  
+  // K-HIPHOP / K-R&B (still K-pop category)
+  "dean", "crush", "loco", "gray", "ash island", "epik high",
 ];
 
+// HINDI ARTISTS - Exact Spotify display names (NO overlap with Tamil)
 const HINDI_ARTISTS = [
-  "arijit singh", "shreya ghoshal", "neha kakkar", "badshah",
-  "a.r. rahman", "pritam", "amit trivedi", "vishal-shekhar",
-  "atif aslam", "honey singh", "kumar sanu", "sonu nigam",
-  "jubin nautiyal", "armaan malik", "darshan raval",
+  "arijit singh", "neha kakkar", "badshah", "pritam",
+  "amit trivedi", "vishal-shekhar", "atif aslam", "honey singh",
+  "kumar sanu", "sonu nigam", "jubin nautiyal", "armaan malik",
+  "darshan raval", "shreya ghoshal", // Shreya is mostly Hindi
 ];
 
+// Unicode character ranges for script detection
 const TAMIL_REGEX = /[\u0B80-\u0BFF]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
 const HINDI_REGEX = /[\u0900-\u097F]/;
@@ -58,20 +90,26 @@ interface SimplifiedPlaylist {
   total: number;
 }
 
+// DETECTION ORDER MATTERS! Korean first (most distinct), then Tamil, then Hindi, else English
 function detectLanguage(trackName: string, artistNames: string[]): string {
-  const lowerArtists = artistNames.map((a) => a.toLowerCase());
+  const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
 
-  if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) return "tamil";
-  if (TAMIL_REGEX.test(trackName)) return "tamil";
-
-  if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) return "hindi";
-  if (HINDI_REGEX.test(trackName)) return "hindi";
-
-  if (lowerArtists.some((name) => KPOP_PATTERNS.some((kp) => name.includes(kp)))) return "korean";
+  // 1. K-POP FIRST (most distinct, avoid false positives)
   if (KOREAN_REGEX.test(trackName)) return "korean";
+  if (lowerArtists.some((name) => KPOP_ARTISTS.some((kp) => name.includes(kp)))) return "korean";
 
+  // 2. TAMIL (strong composer/singer match)
+  if (TAMIL_REGEX.test(trackName)) return "tamil";
+  if (lowerArtists.some((name) => TAMIL_ARTISTS.some((ta) => name.includes(ta)))) return "tamil";
+
+  // 3. HINDI
+  if (HINDI_REGEX.test(trackName)) return "hindi";
+  if (lowerArtists.some((name) => HINDI_ARTISTS.some((ha) => name.includes(ha)))) return "hindi";
+
+  // 4. DEFAULT: English
   return "english";
 }
+
 
 function getGenreColor(genre: string): string {
   const colors: Record<string, string> = {
