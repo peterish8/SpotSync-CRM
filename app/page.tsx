@@ -1,209 +1,237 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { SpotifyApi, Scopes, SimplifiedPlaylist } from "@spotify/web-api-ts-sdk";
-import { MainLayout } from "@/components/layout";
-import { Card, CardContent, Button } from "@/components/ui";
-import { Music, ListMusic, Play, Heart } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Music, Layers, Filter, Users, Sparkles, ArrowRight, Check, Zap } from "lucide-react";
 
-interface DashboardStats {
-  totalPlaylists: number;
-  totalTracks: number;
-  likedSongsCount: number;
-  allPlaylists: SimplifiedPlaylist[];
-}
-
-export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const router = useRouter();
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const sdk = SpotifyApi.withUserAuthorization(
-          process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
-          process.env.NEXT_PUBLIC_REDIRECT_URI!,
-          [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
-        );
-
-        const { authenticated } = await sdk.authenticate();
-        if (!authenticated) {
-          router.push("/login");
-          return;
-        }
-
-        // Fetch all playlists
-        const playlists = await sdk.currentUser.playlists.playlists(50);
-        
-        // Fetch liked songs count
-        const likedSongs = await sdk.currentUser.tracks.savedTracks(1);
-
-        const totalTracks = playlists.items.reduce((acc, pl) => acc + (pl.tracks?.total || 0), 0);
-
-        setStats({
-          totalPlaylists: playlists.total,
-          totalTracks,
-          likedSongsCount: likedSongs.total,
-          allPlaylists: playlists.items,
-        });
-      } catch (err: any) {
-        console.error("Dashboard error:", err);
-        if (err.message?.includes("No token")) {
-          router.push("/login");
-        } else {
-          setError(err.message || "Failed to load dashboard");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-spotify-green border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-text-secondary">Loading your playlists...</p>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center space-y-4">
-            <p className="text-accent-red">{error}</p>
-            <Button onClick={() => window.location.reload()}>Retry</Button>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
+export default function LandingPage() {
   return (
-    <MainLayout>
-      <div className="space-y-8">
-        {/* Welcome */}
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Welcome back!</h1>
-          <p className="text-text-secondary mt-1">Manage your Spotify playlists with ease</p>
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f1a0f] to-[#0a0a0a]">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-lg border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-spotify-green rounded-xl flex items-center justify-center">
+              <Music className="w-5 h-5 text-black" />
+            </div>
+            <span className="text-xl font-bold text-white">SyncSpot</span>
+          </div>
+          <Link
+            href="/login"
+            className="px-6 py-2.5 bg-spotify-green hover:bg-spotify-green-hover text-black font-semibold rounded-full transition-all hover:scale-105"
+          >
+            Get Started
+          </Link>
         </div>
+      </nav>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-spotify-green/20 rounded-xl flex items-center justify-center">
-                  <ListMusic className="w-6 h-6 text-spotify-green" />
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-text-primary">{stats?.totalPlaylists || 0}</p>
-                  <p className="text-sm text-text-secondary">Total Playlists</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-8">
+            <Sparkles className="w-4 h-4 text-spotify-green" />
+            <span className="text-sm text-white/70">Professional Playlist Management</span>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-accent-blue/20 rounded-xl flex items-center justify-center">
-                  <Music className="w-6 h-6 text-accent-blue" />
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-text-primary">{stats?.totalTracks || 0}</p>
-                  <p className="text-sm text-text-secondary">Total Tracks</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Heading */}
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+            Organize Your
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-spotify-green to-emerald-400">
+              Spotify Playlists
+            </span>
+          </h1>
 
-          <Card variant="interactive">
-            <Link href="/workspace">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-accent-purple/20 rounded-xl flex items-center justify-center">
-                    <Play className="w-6 h-6 text-accent-purple" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-text-primary">Start Organizing</p>
-                    <p className="text-sm text-text-secondary">Open Workspace →</p>
-                  </div>
-                </div>
-              </CardContent>
+          <p className="text-xl text-white/60 max-w-2xl mx-auto mb-10">
+            Extract genres, drag & drop tracks, manage your music library like never before.
+            Built for music lovers who want complete control.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link
+              href="/login"
+              className="group px-8 py-4 bg-spotify-green hover:bg-spotify-green-hover text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2"
+            >
+              Connect with Spotify
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-          </Card>
+            <a
+              href="#features"
+              className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-full transition-all border border-white/10"
+            >
+              Learn More
+            </a>
+          </div>
+
+          {/* Stats */}
+          <div className="mt-16 flex items-center justify-center gap-12 flex-wrap">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">5+</p>
+              <p className="text-sm text-white/50">Languages Detected</p>
+            </div>
+            <div className="w-px h-10 bg-white/10" />
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">100%</p>
+              <p className="text-sm text-white/50">Free to Use</p>
+            </div>
+            <div className="w-px h-10 bg-white/10" />
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">Instant</p>
+              <p className="text-sm text-white/50">Sync with Spotify</p>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* All Playlists Grid */}
-        <div>
-          <h2 className="text-xl font-bold text-text-primary mb-4">Your Library</h2>
+      {/* Features Section */}
+      <section id="features" className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Powerful Features</h2>
+            <p className="text-lg text-white/50">Everything you need to manage your music library</p>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {/* Liked Songs Card */}
-            <Link href="/playlist/liked-songs">
-              <Card variant="interactive" className="group overflow-hidden">
-                <div className="aspect-square relative bg-gradient-to-br from-purple-700 to-blue-300 flex items-center justify-center">
-                  <Heart className="w-16 h-16 text-white fill-white" />
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 bg-spotify-green rounded-full flex items-center justify-center transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                      <Play className="w-5 h-5 text-black ml-0.5" />
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <p className="font-medium text-text-primary truncate text-sm">Liked Songs</p>
-                  <p className="text-xs text-text-secondary">{stats?.likedSongsCount || 0} tracks</p>
-                </div>
-              </Card>
-            </Link>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Feature 1 */}
+            <div className="group p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-spotify-green/50 transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-spotify-green/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-spotify-green/30 transition-colors">
+                <Layers className="w-6 h-6 text-spotify-green" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Workspace</h3>
+              <p className="text-sm text-white/50">
+                Drag and drop tracks between playlists with real-time Spotify sync.
+              </p>
+            </div>
 
-            {/* All Playlists */}
-            {stats?.allPlaylists.map((playlist) => (
-              <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
-                <Card variant="interactive" className="group overflow-hidden">
-                  <div className="aspect-square relative">
-                    {playlist.images?.[0] ? (
-                      <img
-                        src={playlist.images[0].url}
-                        alt={playlist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-background-tertiary flex items-center justify-center">
-                        <Music className="w-12 h-12 text-text-tertiary" />
-                      </div>
-                    )}
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="w-12 h-12 bg-spotify-green rounded-full flex items-center justify-center transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                        <Play className="w-5 h-5 text-black ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <p className="font-medium text-text-primary truncate text-sm">{playlist.name}</p>
-                    <p className="text-xs text-text-secondary">{playlist.tracks?.total || 0} tracks</p>
-                  </div>
-                </Card>
-              </Link>
+            {/* Feature 2 */}
+            <div className="group p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-accent-purple/50 transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-accent-purple/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-accent-purple/30 transition-colors">
+                <Filter className="w-6 h-6 text-accent-purple" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Genre Extract</h3>
+              <p className="text-sm text-white/50">
+                Automatically detect Tamil, K-pop, Hindi, Telugu & English songs.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="group p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-accent-blue/50 transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-accent-blue/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-accent-blue/30 transition-colors">
+                <Users className="w-6 h-6 text-accent-blue" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Artist Extract</h3>
+              <p className="text-sm text-white/50">
+                Get all unique artist names from any playlist in one click.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="group p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-accent-orange/50 transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-accent-orange/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-accent-orange/30 transition-colors">
+                <Zap className="w-6 h-6 text-accent-orange" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Instant Loading</h3>
+              <p className="text-sm text-white/50">
+                Hover-to-prefetch technology for lightning-fast pagination.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-6 bg-white/[0.02]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">How It Works</h2>
+            <p className="text-lg text-white/50">Get started in seconds</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-spotify-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-spotify-green">1</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Connect</h3>
+              <p className="text-sm text-white/50">Login with your Spotify account securely</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-spotify-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-spotify-green">2</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Select</h3>
+              <p className="text-sm text-white/50">Choose a playlist to analyze or organize</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-spotify-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-spotify-green">3</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Manage</h3>
+              <p className="text-sm text-white/50">Extract genres, move tracks, sync instantly</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Supported Languages */}
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Language Detection</h2>
+          <p className="text-lg text-white/50 mb-12">Smart artist-based genre classification</p>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            {[
+              { name: "Tamil", color: "#F97316" },
+              { name: "English", color: "#3B82F6" },
+              { name: "K-pop", color: "#8B5CF6" },
+              { name: "Hindi", color: "#EC4899" },
+              { name: "Telugu", color: "#14B8A6" },
+            ].map((lang) => (
+              <div
+                key={lang.name}
+                className="px-6 py-3 rounded-full border transition-all hover:scale-105"
+                style={{ borderColor: lang.color, backgroundColor: `${lang.color}20` }}
+              >
+                <span className="font-semibold" style={{ color: lang.color }}>{lang.name}</span>
+              </div>
             ))}
           </div>
         </div>
-      </div>
-    </MainLayout>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-spotify-green/20 to-emerald-500/20 rounded-3xl p-12 border border-spotify-green/30">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
+          <p className="text-lg text-white/60 mb-8">
+            Connect your Spotify account and take control of your music library.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-spotify-green hover:bg-spotify-green-hover text-black font-bold rounded-full transition-all hover:scale-105"
+          >
+            <Music className="w-5 h-5" />
+            Connect with Spotify
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-6 border-t border-white/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-spotify-green rounded-lg flex items-center justify-center">
+              <Music className="w-4 h-4 text-black" />
+            </div>
+            <span className="text-sm text-white/50">SyncSpot CRM</span>
+          </div>
+          <p className="text-sm text-white/30">
+            Powered by Spotify Web API • Built with Next.js
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

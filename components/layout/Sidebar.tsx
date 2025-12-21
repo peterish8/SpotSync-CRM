@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Layers, Settings, Filter, Users } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Workspace", href: "/workspace", icon: Layers },
   { name: "Genre Extract", href: "/extract", icon: Filter },
   { name: "Artist Extract", href: "/artists", icon: Users },
@@ -19,7 +19,7 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-60 bg-background-secondary border-r border-border flex flex-col z-40">
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3">
           <img 
             src="/favicon.ico" 
             alt="SyncSpot" 
@@ -35,7 +35,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
           return (
             <Link
               key={item.name}
