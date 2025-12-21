@@ -230,6 +230,16 @@ interface SimplifiedPlaylist {
 // MULTI-GENRE DETECTION: Returns ALL matching genres for collab tracks
 function detectLanguages(trackName: string, artistNames: string[]): string[] {
   const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
+
+  // TAMIL-EXCLUSIVE: These artists' songs go ONLY to Tamil
+  const TAMIL_EXCLUSIVE = ["sai abhyankkar"];
+  const hasTamilExclusive = lowerArtists.some((artist) =>
+    TAMIL_EXCLUSIVE.some((ta) => artist === ta || artist.includes(ta))
+  );
+  if (hasTamilExclusive) {
+    return ["tamil"];
+  }
+
   const detectedLanguages: string[] = [];
 
   // Helper: Check if artist name EXACTLY matches canonical name
