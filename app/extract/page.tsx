@@ -232,6 +232,7 @@ function detectLanguage(trackName: string, artistNames: string[]): string {
   const lowerArtists = artistNames.map((a) => a.toLowerCase().trim());
 
   // Helper: Check if artist name EXACTLY matches or STARTS with canonical name
+  // Helper: Check if artist name EXACTLY matches or STARTS with canonical name
   const matchesArtist = (artistList: string[]) => 
     lowerArtists.some((artist) => 
       artistList.some((canonical) => 
@@ -239,26 +240,31 @@ function detectLanguage(trackName: string, artistNames: string[]): string {
       )
     );
 
-  // 1. K-POP FIRST (most distinct)
-  if (KOREAN_REGEX.test(trackName)) return "korean";
-  if (matchesArtist(KPOP_ARTISTS)) return "korean";
-
-  // 2. TAMIL
-  if (TAMIL_REGEX.test(trackName)) return "tamil";
-  if (matchesArtist(TAMIL_ARTISTS)) return "tamil";
-
-  // 3. TELUGU
-  if (TELUGU_REGEX.test(trackName)) return "telugu";
-  if (matchesArtist(TELUGU_ARTISTS)) return "telugu";
-
-  // 4. HINDI
-  if (HINDI_REGEX.test(trackName)) return "hindi";
-  if (matchesArtist(HINDI_ARTISTS)) return "hindi";
-
-  // 5. ENGLISH (explicit match, not just fallback)
+  // PRIORITY 1: Check ARTIST LISTS FIRST (before Unicode detection)
+  // This ensures known English artists don't get misclassified by Korean track titles
+  
+  // 1a. ENGLISH (check first - highest priority for known Western artists)
   if (matchesArtist(ENGLISH_ARTISTS)) return "english";
 
-  // 6. DEFAULT: English (if no match found)
+  // 1b. K-POP ARTIST MATCH
+  if (matchesArtist(KPOP_ARTISTS)) return "korean";
+
+  // 1c. TAMIL ARTIST MATCH
+  if (matchesArtist(TAMIL_ARTISTS)) return "tamil";
+
+  // 1d. TELUGU ARTIST MATCH
+  if (matchesArtist(TELUGU_ARTISTS)) return "telugu";
+
+  // 1e. HINDI ARTIST MATCH
+  if (matchesArtist(HINDI_ARTISTS)) return "hindi";
+
+  // PRIORITY 2: Unicode regex fallback (for unknown artists)
+  if (KOREAN_REGEX.test(trackName)) return "korean";
+  if (TAMIL_REGEX.test(trackName)) return "tamil";
+  if (TELUGU_REGEX.test(trackName)) return "telugu";
+  if (HINDI_REGEX.test(trackName)) return "hindi";
+
+  // DEFAULT: English
   return "english";
 }
 
