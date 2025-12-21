@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Layers, Settings, Music, Filter } from "lucide-react";
+import { LayoutDashboard, Layers, Settings, Filter, Users } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Workspace", href: "/workspace", icon: Layers },
   { name: "Genre Extract", href: "/extract", icon: Filter },
+  { name: "Artist Extract", href: "/artists", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
