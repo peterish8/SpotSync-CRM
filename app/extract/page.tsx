@@ -75,8 +75,8 @@ const KPOP_ARTISTS = [
   "taeyeon", "hwasa", "jeon somi", "heize", "bibi",
   
   // K-HIPHOP / K-R&B / KOREAN OST (still K-pop category)
-  "dean", "crush", "loco", "gray", "ash island", "epik high",
-  "swervy", "samuel kim", "ejae", "hwang sang jun", "jung youth",
+  "crush", "loco", "gray", "ash island", "epik high",
+  "swervy", "ejae", "hwang sang jun",
   
   // K-POP RELATED PROJECTS
   "kpop demon hunters cast",
