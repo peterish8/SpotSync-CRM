@@ -34,6 +34,7 @@ export default function WorkspacePage() {
     setAvailablePlaylists,
     addTrackToPlaylist,
     removeTrackFromPlaylist,
+    appendTracksToPlaylist,
   } = usePlaylistStore();
 
   const sensors = useSensors(
