@@ -4,6 +4,7 @@ import { spotify } from "@/lib/spotify/auth";
 import { Music, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -12,13 +13,15 @@ function LoginContent() {
   const handleLogin = async () => {
     try {
       await spotify.authenticate();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
+      toast.error(error.message || "Failed to connect to Spotify. Please try again.");
     }
   };
 
   return (
     <div className="min-h-screen bg-background-primary flex flex-col items-center justify-center p-4">
+      <Toaster position="top-center" />
       <div className="w-full max-w-md space-y-6 bg-background-secondary p-8 rounded-xl border border-border">
         {/* Session Timeout Message */}
         {isTimeout && (
