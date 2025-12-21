@@ -52,25 +52,29 @@ const TAMIL_ARTISTS = [
 // K-POP ARTISTS - Exact Spotify display names (checked FIRST - highest priority)
 const KPOP_ARTISTS = [
   // TOP-TIER MALE GROUPS
-  "bts", "exo", "seventeen", "stray kids", "ateez", "txt",
+  "bts", "exo", "seventeen", "stray kids", "ateez", "txt", "tomorrow x together",
   "nct", "nct 127", "nct dream", "enhypen", "monsta x", "got7",
-  "bigbang", "ikon", "treasure", "shinee", "the boyz",
+  "bigbang", "ikon", "treasure", "shinee", "the boyz", "huntr/x",
   
   // TOP-TIER FEMALE GROUPS
   "blackpink", "twice", "red velvet", "itzy", "aespa", "ive",
   "le sserafim", "newjeans", "(g)i-dle", "stayc", "illit",
-  "babymonster", "oh my girl", "mamamoo",
+  "babymonster", "oh my girl", "mamamoo", "fifty fifty", "katseye",
   
   // MALE SOLOISTS
-  "jungkook", "v", "jimin", "rm", "agust d", "baekhyun",
-  "taemin", "kai", "zico", "psy", "g-dragon", "jay park",
+  "jungkook", "jung kook", "v", "jimin", "rm", "agust d", "baekhyun",
+  "taemin", "kai", "zico", "psy", "g-dragon", "jay park", "eric nam",
   
   // FEMALE SOLOISTS
-  "iu", "jennie", "rosé", "lisa", "chung ha", "sunmi",
+  "iu", "jennie", "jisoo", "rosé", "lisa", "chung ha", "sunmi",
   "taeyeon", "hwasa", "jeon somi", "heize", "bibi",
   
-  // K-HIPHOP / K-R&B (still K-pop category)
+  // K-HIPHOP / K-R&B / KOREAN OST (still K-pop category)
   "dean", "crush", "loco", "gray", "ash island", "epik high",
+  "swervy", "samuel kim", "ejae", "hwang sang jun", "jung youth",
+  
+  // K-POP RELATED PROJECTS
+  "kpop demon hunters cast",
 ];
 
 // HINDI ARTISTS - Exact Spotify display names (NO overlap with Tamil)
