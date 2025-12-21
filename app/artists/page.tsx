@@ -260,21 +260,26 @@ export default function ArtistExtractorPage() {
         </div>
 
         {/* Playlist Selector */}
-        <Card>
-          <CardContent className="p-6">
-            <label className="block text-text-primary font-medium mb-3">Select Playlist</label>
-            <select
-              value={selectedPlaylist}
-              onChange={(e) => handlePlaylistSelect(e.target.value)}
-              className="w-full bg-background-tertiary text-text-primary px-4 py-3 rounded-lg border border-border focus:border-spotify-green focus:outline-none"
-            >
-              <option value="">Choose a playlist...</option>
-              {playlists.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} ({p.total} songs)</option>
-              ))}
-            </select>
-          </CardContent>
-        </Card>
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-spotify-green to-emerald-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+          <div className="relative bg-background-secondary border border-border rounded-xl p-1 overflow-visible">
+            <div className="relative">
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary pointer-events-none" />
+              <select
+                value={selectedPlaylist}
+                onChange={(e) => handlePlaylistSelect(e.target.value)}
+                className="w-full appearance-none bg-transparent text-text-primary text-lg font-medium px-4 py-4 rounded-lg cursor-pointer focus:outline-none hover:bg-white/5 transition-colors"
+              >
+                <option value="" className="bg-background-secondary text-text-secondary">Select a playlist to extract artists from...</option>
+                {playlists.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-background-secondary text-text-primary py-2">
+                    {p.name} • {p.total} list
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
         {isExtracting && (
           <Card>
