@@ -9,6 +9,7 @@ interface PlaylistContainerProps {
   playlist: Playlist;
   side: "A" | "B";
   onLoadMore?: () => void;
+  onPrefetch?: () => void;
 }
 
 // Calculate total duration
@@ -22,7 +23,7 @@ function formatTotalDuration(tracks: Playlist["tracks"]) {
   return `${minutes}m`;
 }
 
-export function PlaylistContainer({ playlist, side, onLoadMore }: PlaylistContainerProps) {
+export function PlaylistContainer({ playlist, side, onLoadMore, onPrefetch }: PlaylistContainerProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `playlist-${side}`,
     data: { playlistId: playlist.id, side },
@@ -85,6 +86,7 @@ export function PlaylistContainer({ playlist, side, onLoadMore }: PlaylistContai
             {hasMore && onLoadMore && (
               <button
                 onClick={onLoadMore}
+                onMouseEnter={onPrefetch}
                 className="w-full py-3 mt-4 flex items-center justify-center gap-2 
                            bg-background-secondary hover:bg-background-hover 
                            text-text-secondary hover:text-text-primary

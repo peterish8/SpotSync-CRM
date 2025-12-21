@@ -23,6 +23,7 @@ export default function WorkspacePage() {
   const router = useRouter();
   const [activeTrack, setActiveTrack] = useState<Track | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prefetchCache, setPrefetchCache] = useState<{ A: Track[] | null; B: Track[] | null }>({ A: null, B: null });
 
   const {
     playlistA,
@@ -172,7 +173,7 @@ export default function WorkspacePage() {
     }
   }
 
-  // Load more tracks for a playlist
+  // Load more tracks for a playlist (uses prefetch cache if available)
   async function loadMoreTracks(side: "A" | "B") {
     const playlist = side === "A" ? playlistA : playlistB;
     if (!playlist) return;
@@ -183,6 +184,16 @@ export default function WorkspacePage() {
       return;
     }
 
+    // Check if we have prefetched data
+    const cachedTracks = prefetchCache[side];
+    if (cachedTracks && cachedTracks.length > 0) {
+      appendTracksToPlaylist(cachedTracks, side);
+      setPrefetchCache((prev) => ({ ...prev, [side]: null }));
+      toast.success(`Loaded ${cachedTracks.length} more tracks`);
+      return;
+    }
+
+    // Otherwise fetch fresh
     try {
       const sdk = SpotifyApi.withUserAuthorization(
         process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
@@ -238,6 +249,71 @@ export default function WorkspacePage() {
     }
   }
 
+  // Prefetch tracks on hover (silent, no toast)
+  async function prefetchTracks(side: "A" | "B") {
+    // Don't prefetch if already cached
+    if (prefetchCache[side]) return;
+
+    const playlist = side === "A" ? playlistA : playlistB;
+    if (!playlist) return;
+
+    const currentCount = playlist.tracks.length;
+    if (currentCount >= playlist.total) return;
+
+    try {
+      const sdk = SpotifyApi.withUserAuthorization(
+        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
+        process.env.NEXT_PUBLIC_REDIRECT_URI!,
+        [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
+      );
+
+      let newTracks: Track[] = [];
+
+      if (playlist.id === "liked-songs") {
+        const response = await sdk.currentUser.tracks.savedTracks(50, currentCount);
+        newTracks = response.items
+          .filter((item) => item.track)
+          .map((item) => {
+            const track = item.track as any;
+            return {
+              id: track.id,
+              name: track.name,
+              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+              album: {
+                name: track.album.name,
+                images: track.album.images || [],
+              },
+              uri: track.uri,
+              duration_ms: track.duration_ms,
+            };
+          });
+      } else {
+        const response = await sdk.playlists.getPlaylistItems(playlist.id, undefined, undefined, 50, currentCount);
+        newTracks = response.items
+          .filter((item) => item.track && item.track.type === "track")
+          .map((item) => {
+            const track = item.track as any;
+            return {
+              id: track.id,
+              name: track.name,
+              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+              album: {
+                name: track.album.name,
+                images: track.album.images || [],
+              },
+              uri: track.uri,
+              duration_ms: track.duration_ms,
+            };
+          });
+      }
+
+      // Store in cache silently
+      setPrefetchCache((prev) => ({ ...prev, [side]: newTracks }));
+    } catch (error) {
+      // Silent fail - user will just fetch on click
+      console.log("Prefetch failed silently:", error);
+    }
+  }
 
   // Drag handlers
   function handleDragStart(event: DragStartEvent) {
@@ -359,8 +435,18 @@ export default function WorkspacePage() {
           {/* Dual Playlist View */}
           {playlistA && playlistB ? (
             <div className="grid grid-cols-2 gap-6">
-              <PlaylistContainer playlist={playlistA} side="A" onLoadMore={() => loadMoreTracks("A")} />
-              <PlaylistContainer playlist={playlistB} side="B" onLoadMore={() => loadMoreTracks("B")} />
+              <PlaylistContainer 
+                playlist={playlistA} 
+                side="A" 
+                onLoadMore={() => loadMoreTracks("A")}
+                onPrefetch={() => prefetchTracks("A")}
+              />
+              <PlaylistContainer 
+                playlist={playlistB} 
+                side="B" 
+                onLoadMore={() => loadMoreTracks("B")}
+                onPrefetch={() => prefetchTracks("B")}
+              />
             </div>
           ) : (
             <div className="text-center py-20 bg-background-secondary rounded-xl border border-border">
