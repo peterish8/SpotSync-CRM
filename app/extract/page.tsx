@@ -63,6 +63,37 @@ const HINDI_ARTISTS = [
   "darshan raval", "shreya ghoshal", // Shreya is mostly Hindi
 ];
 
+// ENGLISH ARTISTS - Canonical Spotify list (80+ artists)
+const ENGLISH_ARTISTS = [
+  // POP / MAINSTREAM
+  "taylor swift", "ed sheeran", "ariana grande", "justin bieber", "the weeknd",
+  "dua lipa", "billie eilish", "olivia rodrigo", "selena gomez", "shawn mendes",
+  "camila cabello", "harry styles", "zayn", "miley cyrus", "lady gaga",
+  "katy perry", "rihanna", "bruno mars", "sia", "adele",
+  
+  // HIP-HOP / RAP
+  "drake", "post malone", "travis scott", "kanye west", "eminem",
+  "kendrick lamar", "j. cole", "jay-z", "future", "lil wayne",
+  "doja cat", "nicki minaj", "cardi b", "21 savage", "logic",
+  
+  // ROCK / ALTERNATIVE / INDIE
+  "coldplay", "imagine dragons", "onerepublic", "maroon 5", "linkin park",
+  "green day", "the chainsmokers", "arctic monkeys", "the 1975",
+  "panic! at the disco", "fall out boy", "radiohead", "u2", "the killers", "foo fighters",
+  
+  // EDM / ELECTRONIC
+  "calvin harris", "avicii", "alan walker", "martin garrix", "zedd",
+  "kygo", "marshmello", "david guetta", "tiësto", "deadmau5",
+  
+  // R&B / SOUL / ALT-POP
+  "frank ocean", "sam smith", "halsey", "lana del rey", "charlie puth",
+  "john legend", "usher", "chris brown", "the neighbourhood", "tate mcrae",
+  
+  // ADDITIONAL TOP ARTISTS
+  "lauv", "ava max", "bebe rexha", "niall horan", "louis tomlinson",
+  "james arthur", "lewis capaldi", "hozier", "troye sivan", "glass animals",
+];
+
 // Unicode character ranges for script detection
 const TAMIL_REGEX = /[\u0B80-\u0BFF]/;
 const KOREAN_REGEX = /[\uAC00-\uD7AF]/;
