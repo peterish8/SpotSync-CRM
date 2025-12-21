@@ -17,6 +17,7 @@ export function PlaylistSelector({ side, onSelect }: PlaylistSelectorProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { availablePlaylists, playlistA, playlistB, setAvailablePlaylists } = usePlaylistStore();
 
@@ -30,6 +31,11 @@ export function PlaylistSelector({ side, onSelect }: PlaylistSelectorProps) {
     if (b.name === "Liked Songs") return 1;
     return a.name.localeCompare(b.name);
   });
+
+  // Filter playlists by search term
+  const filteredPlaylists = sortedPlaylists.filter((playlist) =>
+    playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   async function handleCreatePlaylist() {
     if (!newPlaylistName.trim()) {
@@ -81,6 +87,12 @@ export function PlaylistSelector({ side, onSelect }: PlaylistSelectorProps) {
     }
   }
 
+  // Reset search when dropdown closes
+  function handleClose() {
+    setIsOpen(false);
+    setSearchTerm("");
+  }
+
   return (
     <div className="relative">
       <button
@@ -122,30 +134,44 @@ export function PlaylistSelector({ side, onSelect }: PlaylistSelectorProps) {
       {/* Dropdown */}
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-2 bg-background-secondary border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
-            {/* Create New Playlist Option */}
-            <button
-              onClick={() => {
-                setShowCreateModal(true);
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-3 p-3 hover:bg-background-hover transition-colors border-b border-border text-spotify-green"
-            >
-              <div className="w-10 h-10 rounded bg-spotify-green/20 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-spotify-green" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium">Create New Playlist</p>
-                <p className="text-xs text-text-secondary">Start fresh with an empty playlist</p>
-              </div>
-            </button>
+          <div className="fixed inset-0 z-40" onClick={handleClose} />
+          <div className="absolute top-full left-0 right-0 mt-2 bg-background-secondary border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-hidden flex flex-col">
+            {/* Search Input */}
+            <div className="p-3 border-b border-border">
+              <input
+                type="text"
+                placeholder="Search playlists..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-spotify-green focus:border-transparent"
+                autoFocus
+              />
+            </div>
 
-            {/* Existing Playlists */}
-            {sortedPlaylists.length === 0 ? (
-              <div className="p-4 text-center text-text-tertiary">No playlists available</div>
-            ) : (
-              sortedPlaylists.map((playlist) => {
+            {/* Scrollable List */}
+            <div className="overflow-y-auto flex-1">
+              {/* Create New Playlist Option */}
+              <button
+                onClick={() => {
+                  setShowCreateModal(true);
+                  handleClose();
+                }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-background-hover transition-colors border-b border-border text-spotify-green"
+              >
+                <div className="w-10 h-10 rounded bg-spotify-green/20 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-spotify-green" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Create New Playlist</p>
+                  <p className="text-xs text-text-secondary">Start fresh with an empty playlist</p>
+                </div>
+              </button>
+
+              {/* Existing Playlists */}
+              {filteredPlaylists.length === 0 ? (
+                <div className="p-4 text-center text-text-tertiary">No playlists found</div>
+              ) : (
+                filteredPlaylists.map((playlist) => {
                 const isLocked = playlist.id === otherPlaylistId;
                 const isSelected = currentPlaylist?.id === playlist.id;
                 const isLikedSongs = playlist.name === "Liked Songs";
@@ -194,7 +220,8 @@ export function PlaylistSelector({ side, onSelect }: PlaylistSelectorProps) {
                   </button>
                 );
               })
-            )}
+              )}
+            </div>
           </div>
         </>
       )}

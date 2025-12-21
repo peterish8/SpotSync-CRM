@@ -48,6 +48,7 @@ interface PlaylistState {
   // Track operations
   addTrackToPlaylist: (track: Track, side: "A" | "B") => void;
   removeTrackFromPlaylist: (trackId: string, side: "A" | "B") => void;
+  appendTracksToPlaylist: (tracks: Track[], side: "A" | "B") => void;
 }
 
 export const usePlaylistStore = create<PlaylistState>()(
@@ -101,6 +102,25 @@ export const usePlaylistStore = create<PlaylistState>()(
             ...playlist,
             tracks: playlist.tracks.filter((t) => t.id !== trackId),
             total: playlist.total - 1,
+          };
+
+          return side === "A"
+            ? { playlistA: updatedPlaylist }
+            : { playlistB: updatedPlaylist };
+        }),
+
+      appendTracksToPlaylist: (tracks, side) =>
+        set((state) => {
+          const playlist = side === "A" ? state.playlistA : state.playlistB;
+          if (!playlist) return state;
+
+          // Filter out duplicates
+          const existingIds = new Set(playlist.tracks.map((t) => t.id));
+          const newTracks = tracks.filter((t) => !existingIds.has(t.id));
+
+          const updatedPlaylist = {
+            ...playlist,
+            tracks: [...playlist.tracks, ...newTracks],
           };
 
           return side === "A"

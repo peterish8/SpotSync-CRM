@@ -60,15 +60,29 @@ export default function WorkspacePage() {
           return;
         }
 
+        // Fetch regular playlists
         const playlists = await sdk.currentUser.playlists.playlists(50);
-        setAvailablePlaylists(
-          playlists.items.map((p) => ({
+        
+        // Fetch Liked Songs count
+        const likedSongs = await sdk.currentUser.tracks.savedTracks(1);
+        
+        // Create playlist list with Liked Songs at the top
+        const playlistList = [
+          {
+            id: "liked-songs",
+            name: "Liked Songs",
+            images: [],
+            total: likedSongs.total,
+          },
+          ...playlists.items.map((p) => ({
             id: p.id,
             name: p.name,
             images: p.images || [],
             total: p.tracks?.total || 0,
-          }))
-        );
+          })),
+        ];
+        
+        setAvailablePlaylists(playlistList);
       } catch (error) {
         console.error("Failed to fetch playlists:", error);
         toast.error("Failed to load playlists");
@@ -80,7 +94,7 @@ export default function WorkspacePage() {
     fetchPlaylists();
   }, [router, setAvailablePlaylists]);
 
-  // Load playlist tracks
+  // Load playlist tracks with full pagination
   async function loadPlaylistTracks(playlistId: string, side: "A" | "B") {
     try {
       const sdk = SpotifyApi.withUserAuthorization(
@@ -89,31 +103,95 @@ export default function WorkspacePage() {
         [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
       );
 
-      const playlistInfo = await sdk.playlists.getPlaylist(playlistId);
-      const tracks = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, 100);
+      let playlist: Playlist;
+      const allTracks: Track[] = [];
 
-      const playlist: Playlist = {
-        id: playlistInfo.id,
-        name: playlistInfo.name,
-        images: playlistInfo.images || [],
-        total: playlistInfo.tracks.total,
-        tracks: tracks.items
-          .filter((item) => item.track && item.track.type === "track")
-          .map((item) => {
-            const track = item.track as any;
-            return {
-              id: track.id,
-              name: track.name,
-              artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
-              album: {
-                name: track.album.name,
-                images: track.album.images || [],
-              },
-              uri: track.uri,
-              duration_ms: track.duration_ms,
-            };
-          }),
-      };
+      // Handle Liked Songs specially
+      if (playlistId === "liked-songs") {
+        toast.loading("Loading all liked songs...", { id: "loading" });
+        
+        let offset = 0;
+        const limit = 50;
+        let hasMore = true;
+
+        while (hasMore) {
+          const response = await sdk.currentUser.tracks.savedTracks(limit, offset);
+          
+          const tracks = response.items
+            .filter((item) => item.track)
+            .map((item) => {
+              const track = item.track as any;
+              return {
+                id: track.id,
+                name: track.name,
+                artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+                album: {
+                  name: track.album.name,
+                  images: track.album.images || [],
+                },
+                uri: track.uri,
+                duration_ms: track.duration_ms,
+              };
+            });
+          
+          allTracks.push(...tracks);
+          offset += limit;
+          hasMore = response.next !== null && offset < response.total;
+        }
+
+        playlist = {
+          id: "liked-songs",
+          name: "Liked Songs",
+          images: [],
+          total: allTracks.length,
+          tracks: allTracks,
+        };
+
+        toast.dismiss("loading");
+      } else {
+        // Regular playlist with pagination
+        const playlistInfo = await sdk.playlists.getPlaylist(playlistId);
+        toast.loading(`Loading ${playlistInfo.name}...`, { id: "loading" });
+        
+        let offset = 0;
+        const limit = 50;
+        let hasMore = true;
+
+        while (hasMore) {
+          const response = await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, limit, offset);
+          
+          const tracks = response.items
+            .filter((item) => item.track && item.track.type === "track")
+            .map((item) => {
+              const track = item.track as any;
+              return {
+                id: track.id,
+                name: track.name,
+                artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
+                album: {
+                  name: track.album.name,
+                  images: track.album.images || [],
+                },
+                uri: track.uri,
+                duration_ms: track.duration_ms,
+              };
+            });
+          
+          allTracks.push(...tracks);
+          offset += limit;
+          hasMore = response.next !== null && offset < response.total;
+        }
+
+        playlist = {
+          id: playlistInfo.id,
+          name: playlistInfo.name,
+          images: playlistInfo.images || [],
+          total: allTracks.length,
+          tracks: allTracks,
+        };
+
+        toast.dismiss("loading");
+      }
 
       if (side === "A") {
         setPlaylistA(playlist);
@@ -121,8 +199,9 @@ export default function WorkspacePage() {
         setPlaylistB(playlist);
       }
 
-      toast.success(`Loaded ${playlist.name}`);
+      toast.success(`Loaded ${playlist.name} (${playlist.total} songs)`);
     } catch (error) {
+      toast.dismiss("loading");
       console.error("Failed to load playlist:", error);
       toast.error("Failed to load playlist tracks");
     }
@@ -134,7 +213,7 @@ export default function WorkspacePage() {
     setActiveTrack(track);
   }
 
-  function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(event: DragEndEvent) {
     setActiveTrack(null);
 
     const { active, over } = event;
@@ -146,21 +225,54 @@ export default function WorkspacePage() {
     if (!sourceData || !targetData) return;
 
     const track = sourceData.track as Track;
-    const sourceSide = sourceData.sourcePlaylistId === playlistA?.id ? "A" : "B";
+    const sourcePlaylistId = sourceData.sourcePlaylistId as string;
+    const sourceSide = sourcePlaylistId === playlistA?.id ? "A" : "B";
     const targetSide = targetData.side as "A" | "B";
+    const targetPlaylistId = targetSide === "A" ? playlistA?.id : playlistB?.id;
 
     // Don't do anything if dropping in same playlist
     if (sourceSide === targetSide) return;
 
-    // Add to target
-    addTrackToPlaylist(track, targetSide);
+    // Check if target is a real playlist (not Liked Songs for adding)
+    if (!targetPlaylistId) return;
 
-    // Remove from source if move mode
-    if (dragMode === "move") {
-      removeTrackFromPlaylist(track.id, sourceSide);
-      toast.success(`Moved "${track.name}"`);
-    } else {
-      toast.success(`Copied "${track.name}"`);
+    try {
+      const sdk = SpotifyApi.withUserAuthorization(
+        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
+        process.env.NEXT_PUBLIC_REDIRECT_URI!,
+        [...Scopes.userDetails, ...Scopes.userLibrary, ...Scopes.playlistRead, ...Scopes.playlistModify]
+      );
+
+      // Add to target playlist on Spotify
+      if (targetPlaylistId !== "liked-songs") {
+        await sdk.playlists.addItemsToPlaylist(targetPlaylistId, [track.uri]);
+      } else {
+        // Add to Liked Songs
+        await sdk.currentUser.tracks.saveTracks([track.id]);
+      }
+
+      // Update local state
+      addTrackToPlaylist(track, targetSide);
+
+      // Remove from source if move mode
+      if (dragMode === "move") {
+        if (sourcePlaylistId !== "liked-songs") {
+          await sdk.playlists.removeItemsFromPlaylist(sourcePlaylistId, {
+            tracks: [{ uri: track.uri }],
+          });
+        } else {
+          // Remove from Liked Songs
+          await sdk.currentUser.tracks.removeSavedTracks([track.id]);
+        }
+
+        removeTrackFromPlaylist(track.id, sourceSide);
+        toast.success(`Moved "${track.name}" to Spotify ✓`);
+      } else {
+        toast.success(`Copied "${track.name}" to Spotify ✓`);
+      }
+    } catch (error: any) {
+      console.error("Failed to sync with Spotify:", error);
+      toast.error(`Failed to sync: ${error.message || "Unknown error"}`);
     }
   }
 
