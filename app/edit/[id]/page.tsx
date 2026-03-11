@@ -131,6 +131,8 @@ export default function EditPlaylistPage() {
   const [isPrefetching, setIsPrefetching] = useState(false);
   const prefetchedRef = useRef(false);
 
+  const [moves, setMoves] = useState<{oldIndex: number, newIndex: number}[]>([]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -168,7 +170,7 @@ export default function EditPlaylistPage() {
             isLikedSongs: true,
           };
           initialTracks = response.items.map((item, index) => ({
-            id: item.track.id,
+            id: `${item.track.id}-${index}`,
             uri: item.track.uri,
             name: item.track.name,
             artists: item.track.artists.map((a) => a.name).join(", "),
@@ -191,7 +193,7 @@ export default function EditPlaylistPage() {
           initialTracks = tracksResponse.items
             .filter((item) => item.track)
             .map((item, index) => ({
-              id: item.track!.id,
+              id: `${item.track!.id}-${index}`,
               uri: item.track!.uri,
               name: item.track!.name,
               artists: item.track!.artists.map((a: any) => a.name).join(", "),
@@ -240,7 +242,7 @@ export default function EditPlaylistPage() {
       if (isLikedSongs) {
         const response = await sdk.currentUser.tracks.savedTracks(50, loadedCount);
         newTracks = response.items.map((item, index) => ({
-          id: item.track.id,
+          id: `${item.track.id}-${loadedCount + index}`,
           uri: item.track.uri,
           name: item.track.name,
           artists: item.track.artists.map((a) => a.name).join(", "),
@@ -253,7 +255,7 @@ export default function EditPlaylistPage() {
         newTracks = response.items
           .filter((item) => item.track)
           .map((item, index) => ({
-            id: item.track!.id,
+            id: `${item.track!.id}-${loadedCount + index}`,
             uri: item.track!.uri,
             name: item.track!.name,
             artists: item.track!.artists.map((a: any) => a.name).join(", "),
@@ -299,7 +301,7 @@ export default function EditPlaylistPage() {
       if (isLikedSongs) {
         const response = await sdk.currentUser.tracks.savedTracks(50, loadedCount);
         newTracks = response.items.map((item, index) => ({
-          id: item.track.id,
+          id: `${item.track.id}-${loadedCount + index}`,
           uri: item.track.uri,
           name: item.track.name,
           artists: item.track.artists.map((a) => a.name).join(", "),
@@ -312,7 +314,7 @@ export default function EditPlaylistPage() {
         newTracks = response.items
           .filter((item) => item.track)
           .map((item, index) => ({
-            id: item.track!.id,
+            id: `${item.track!.id}-${loadedCount + index}`,
             uri: item.track!.uri,
             name: item.track!.name,
             artists: item.track!.artists.map((a: any) => a.name).join(", "),
@@ -342,9 +344,8 @@ export default function EditPlaylistPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         const newOrder = arrayMove(items, oldIndex, newIndex);
         
-        // Check if order changed
-        const orderChanged = newOrder.some((track, index) => track.id !== originalOrder[index]?.id);
-        setHasChanges(orderChanged);
+        setMoves((prev) => [...prev, { oldIndex, newIndex }]);
+        setHasChanges(true);
         
         return newOrder;
       });
@@ -385,25 +386,18 @@ export default function EditPlaylistPage() {
         // For regular playlists: Use Spotify's reorder API
         toast.loading("Saving changes...", { id: "save" });
         
-        // Find moves needed
-        for (let i = 0; i < tracks.length; i++) {
-          const track = tracks[i];
-          const originalPos = originalOrder.findIndex((t) => t.id === track.id);
-          
-          if (originalPos !== i && originalPos !== -1) {
-            await sdk.playlists.updatePlaylistItems(playlistId, {
-              range_start: originalPos,
-              insert_before: i > originalPos ? i + 1 : i,
-            });
-            // Update original order to reflect the move
-            setOriginalOrder((prev) => arrayMove(prev, originalPos, i));
-          }
+        for (const move of moves) {
+          await sdk.playlists.updatePlaylistItems(playlistId, {
+            range_start: move.oldIndex,
+            insert_before: move.newIndex > move.oldIndex ? move.newIndex + 1 : move.newIndex,
+          });
         }
         
         toast.success("Changes saved!", { id: "save" });
       }
 
       setOriginalOrder([...tracks]);
+      setMoves([]);
       setHasChanges(false);
     } catch (error: any) {
       console.error("Failed to save:", error);
